@@ -17,6 +17,9 @@ import com.badlogic.gdx.math.Polygon;
 import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.Intersector.MinimumTranslationVector;
 import java.util.ArrayList;
+import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.graphics.Camera;
+import com.badlogic.gdx.utils.viewport.Viewport;
 /**
  * Extend functionality of the LibGDX Actor class.
  */
@@ -30,6 +33,7 @@ public class BaseActor extends Actor {
     private float maxSpeed ;
     private float deceleration;
     private Polygon boundaryPolygon;
+    private static Rectangle worldBounds;
     public BaseActor(float x, float y, Stage s) {
         // call constructor from Actor class
         super();
@@ -305,5 +309,45 @@ public class BaseActor extends Actor {
             batch.draw( animation.getKeyFrame(elapsedTime),
                 getX(), getY(), getOriginX(), getOriginY(),
                 getWidth(), getHeight(), getScaleX(), getScaleY(), getRotation() );
+    }
+
+    public static void setWorldBounds(float width, float height)
+    {
+        worldBounds = new Rectangle( 0,0, width, height );
+    }
+
+    public static void setWorldBounds(BaseActor ba)
+    {
+        setWorldBounds( ba.getWidth(), ba.getHeight() );
+    }
+
+    public void boundToWorld()
+    {
+        // check left edge
+        if (getX() < 0)
+            setX(0);
+        // check right edge
+        if (getX() + getWidth() > worldBounds.width)
+            setX(worldBounds.width - getWidth());
+        // check bottom edge
+        if (getY() < 0)
+            setY(0);
+        // check top edge
+        if (getY() + getHeight() > worldBounds.height)
+            setY(worldBounds.height - getHeight());
+    }
+
+    public void alignCamera()
+    {
+        Camera cam = this.getStage().getCamera();
+        Viewport v = this.getStage().getViewport();
+        // center camera on actor
+        cam.position.set( this.getX() + this.getOriginX(), this.getY() + this.getOriginY(), 0 );
+        // bound camera to layout
+        cam.position.x = MathUtils.clamp(cam.position.x,
+            cam.viewportWidth/2,  worldBounds.width -  cam.viewportWidth/2);
+        cam.position.y = MathUtils.clamp(cam.position.y,
+            cam.viewportHeight/2, worldBounds.height - cam.viewportHeight/2);
+        cam.update();
     }
 }

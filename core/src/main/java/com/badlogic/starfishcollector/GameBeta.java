@@ -7,9 +7,11 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 
 public class GameBeta extends Game {
     protected Stage mainStage;
+    protected Stage uiStage;
 
     public void create() {
         mainStage = new Stage();
+        uiStage = new Stage();
         initialize();
     }
 
@@ -20,6 +22,7 @@ public class GameBeta extends Game {
         float dt = Gdx.graphics.getDeltaTime();
         // act method
         mainStage.act(dt);
+        uiStage.act(dt);
         // defined by user
         update(dt);
         // clear the screen
@@ -27,6 +30,7 @@ public class GameBeta extends Game {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         // draw the graphics
         mainStage.draw();
+        uiStage.draw();
     }
 
     public void update(float dt) {
