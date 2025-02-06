@@ -1,18 +1,20 @@
-package com.badlogic.starfishcollector.android;
+package com.badlogic.savethebill.android;
 
 import android.os.Bundle;
 
 import com.badlogic.gdx.backends.android.AndroidApplication;
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
-import com.badlogic.starfishcollector.ZoroCollectorBeta;
+import com.badlogic.savethebill.BillGame;
 
-/** Launches the Android application. */
+/**
+ * Launches the Android application.
+ */
 public class AndroidLauncher extends AndroidApplication {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         AndroidApplicationConfiguration configuration = new AndroidApplicationConfiguration();
-        configuration.useImmersiveMode = true; // Recommended, but not required.
-        initialize(new ZoroCollectorBeta(), configuration);
+        configuration.useImmersiveMode = true;
+        initialize(new BillGame(), configuration);
     }
 }
