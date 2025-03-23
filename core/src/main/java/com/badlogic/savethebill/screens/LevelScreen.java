@@ -27,7 +27,7 @@ public class LevelScreen extends BaseScreen {
         new Zoro(500, 100, mainStage);
         new Zoro(100, 450, mainStage);
         new Zoro(200, 250, mainStage);
-        new Zoro(800, 750, mainStage);
+//        new Zoro(800, 750, mainStage);
 
         new Rock(200, 150, mainStage);
         new Rock(100, 300, mainStage);
