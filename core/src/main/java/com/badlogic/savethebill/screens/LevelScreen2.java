@@ -8,9 +8,14 @@ import com.badlogic.savethebill.BaseActor;
 import com.badlogic.savethebill.BaseGame;
 import com.badlogic.savethebill.characters.MainCharacter;
 import com.badlogic.savethebill.objects.ChristmasTree;
+import com.badlogic.savethebill.objects.LightMask;
 
 import java.util.Random;
 import java.util.Stack;
+
+import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 public class LevelScreen2 extends BaseScreen {
     private MainCharacter mainCharacter;
@@ -19,14 +24,20 @@ public class LevelScreen2 extends BaseScreen {
     private BaseActor youWinMessage;
     private BaseActor continueMessage;
     private Rectangle worldBounds;
+    private LightMask lightMask;
+    private ShapeRenderer shapeRenderer;
+    private SpriteBatch batch;
 
-    private static final int MAZE_WIDTH = 41;  // Number of cells in width (2000 / 48 ≈ 41)
-    private static final int MAZE_HEIGHT = 41; // Number of cells in height
-    private static final int CELL_SIZE = 48;   // Size of each cell in pixels
+    private static final int MAZE_WIDTH = 41;
+    private static final int MAZE_HEIGHT = 41;
+    private static final int CELL_SIZE = 48;
 
-    private boolean[][] maze; // Maze grid: true = path, false = wall (Christmas tree)
+    private boolean[][] maze;
 
     public void initialize() {
+        shapeRenderer = new ShapeRenderer();
+        batch = new SpriteBatch();
+
         BaseActor grass = new BaseActor(0, 0, mainStage);
         grass.loadTexture("grass-2.png");
         grass.setSize(2000, 2000);
@@ -43,18 +54,22 @@ public class LevelScreen2 extends BaseScreen {
             }
         }
 
-        // Вхід (нижній лівий край), вихід (верхній правий край)
         int entranceX = 0;
         int entranceY = 1;
         int exitX = MAZE_WIDTH - 1;
         int exitY = MAZE_HEIGHT - 2;
 
-        // Переконайтеся, що клітинки входу та виходу є прохідними
         maze[entranceX][entranceY] = true;
         maze[exitX][exitY] = true;
+        int lightRadius = 100;
+        lightMask = new LightMask(0, 0, mainStage, lightRadius);
 
-        // Герой з'являється біля входу
         mainCharacter = new MainCharacter(entranceX * CELL_SIZE, entranceY * CELL_SIZE, mainStage);
+
+        lightMask.updatePosition(
+            mainCharacter.getX() + mainCharacter.getWidth() / 2,
+            mainCharacter.getY() + mainCharacter.getHeight() / 2
+        );
 
         win = false;
         gameOver = false;
@@ -62,23 +77,52 @@ public class LevelScreen2 extends BaseScreen {
         continueMessage = null;
     }
 
+    @Override
+    public void render(float delta) {
+        update(delta);
+        Gdx.gl.glClearColor(0, 0, 0, 1);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        mainStage.act(delta);
+        mainStage.draw();
+
+        // Накласти затемнення
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(0, 0, 0, 0.7f);
+        shapeRenderer.rect(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        shapeRenderer.end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+
+        // Додати світлову маску для "зняття" затемнення
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        batch.begin();
+        batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE); // Змінено на SRC_ALPHA, ONE для кращого контролю
+        lightMask.draw(batch, 1); // Малюємо світлову маску
+        batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA); // Скидаємо режим
+        batch.end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+    }
+
+    @Override
+    public void dispose() {
+        super.dispose();
+        shapeRenderer.dispose();
+        batch.dispose(); // Очищаємо SpriteBatch
+    }
+
     public void update(float dt) {
-        // Перевірка зіткнень з ялинками
         for (BaseActor christmasTreeActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.objects.ChristmasTree"))
             mainCharacter.preventOverlap(christmasTreeActor);
 
-        // Перевірка виходу за праву межу
         if (mainCharacter.getX() + mainCharacter.getWidth() >= this.worldBounds.width && !win && !gameOver) {
             win = true;
-
-            // Створення повідомлення "YOU WIN"
             youWinMessage = new BaseActor(0, 0, mainStage);
             youWinMessage.loadTexture("you-win.png");
             youWinMessage.centerAtPosition(mainStage.getCamera().position.x, mainStage.getCamera().position.y + 50);
             youWinMessage.setOpacity(0);
             youWinMessage.addAction(Actions.fadeIn(1));
 
-            // Повідомлення продовження
             continueMessage = new BaseActor(0, 0, mainStage);
             continueMessage.loadTexture("message-continue.png");
             continueMessage.centerAtPosition(mainStage.getCamera().position.x, mainStage.getCamera().position.y - 50);
@@ -87,17 +131,22 @@ public class LevelScreen2 extends BaseScreen {
             continueMessage.addAction(Actions.after(Actions.fadeIn(1)));
         }
 
-        // Обробка переходу на новий рівень
         if (win && Gdx.input.isKeyPressed(Input.Keys.C)) {
             BaseGame.setActiveScreen(new LevelScreen());
         }
+
+        lightMask.updatePosition(
+            mainCharacter.getX() + mainCharacter.getWidth() / 2,
+            mainCharacter.getY() + mainCharacter.getHeight() / 2
+        );
+
+        mainCharacter.alignCamera();
     }
-    // Maze generation using Depth-FirstSearch (DFS)
+
     private void generateMaze() {
         maze = new boolean[MAZE_WIDTH][MAZE_HEIGHT];
         Random random = new Random();
 
-        // Ініціалізація всіх клітинок як стін
         for (int x = 0; x < MAZE_WIDTH; x++) {
             for (int y = 0; y < MAZE_HEIGHT; y++) {
                 maze[x][y] = false;
@@ -105,7 +154,6 @@ public class LevelScreen2 extends BaseScreen {
         }
 
         Stack<int[]> stack = new Stack<>();
-        // Починаємо з клітинки, яка буде входом (0, 1)
         int startX = 0;
         int startY = 1;
         maze[startX][startY] = true;
@@ -141,17 +189,14 @@ public class LevelScreen2 extends BaseScreen {
             }
         }
 
-        // Забезпечення виходу (верхній правий кут)
         int exitX = MAZE_WIDTH - 1;
         int exitY = MAZE_HEIGHT - 2;
         if (!maze[exitX][exitY]) {
-            // З'єднання виходу з найближчою клітинкою
             maze[exitX][exitY] = true;
             maze[exitX - 1][exitY] = true;
         }
     }
 
-    // Helper method to shuffle an array
     private void shuffleArray(int[] array, Random random) {
         for (int i = array.length - 1; i > 0; i--) {
             int index = random.nextInt(i + 1);
@@ -161,11 +206,10 @@ public class LevelScreen2 extends BaseScreen {
         }
     }
 
-    // Helper method to remove a tree at a specific grid position
     private void removeTreeAt(int gridX, int gridY) {
         for (BaseActor actor : BaseActor.getList(mainStage, "com.badlogic.savethebill.objects.ChristmasTree")) {
             if ((int) (actor.getX() / CELL_SIZE) == gridX && (int) (actor.getY() / CELL_SIZE) == gridY) {
-                actor.remove(); // Remove the tree from the stage
+                actor.remove();
                 break;
             }
         }

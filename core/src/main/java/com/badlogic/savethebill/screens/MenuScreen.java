@@ -24,6 +24,6 @@ public class MenuScreen extends BaseScreen
     public void update(float dt)
     {
         if (Gdx.input.isKeyPressed(Keys.S))
-            BillGame.setActiveScreen( new LevelScreen() );
+            BillGame.setActiveScreen( new LevelScreen2() );
     }
 }
