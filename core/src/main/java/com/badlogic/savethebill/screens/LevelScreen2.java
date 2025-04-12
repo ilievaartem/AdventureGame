@@ -2,20 +2,19 @@ package com.badlogic.savethebill.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.savethebill.BaseActor;
 import com.badlogic.savethebill.BaseGame;
 import com.badlogic.savethebill.characters.MainCharacter;
 import com.badlogic.savethebill.objects.ChristmasTree;
-import com.badlogic.savethebill.objects.LightMask;
+import com.badlogic.savethebill.visualelements.LightMask;
 
 import java.util.Random;
 import java.util.Stack;
-
-import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 public class LevelScreen2 extends BaseScreen {
     private MainCharacter mainCharacter;
@@ -85,7 +84,6 @@ public class LevelScreen2 extends BaseScreen {
         mainStage.act(delta);
         mainStage.draw();
 
-        // Накласти затемнення
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
@@ -94,12 +92,11 @@ public class LevelScreen2 extends BaseScreen {
         shapeRenderer.end();
         Gdx.gl.glDisable(GL20.GL_BLEND);
 
-        // Додати світлову маску для "зняття" затемнення
         Gdx.gl.glEnable(GL20.GL_BLEND);
         batch.begin();
-        batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE); // Змінено на SRC_ALPHA, ONE для кращого контролю
-        lightMask.draw(batch, 1); // Малюємо світлову маску
-        batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA); // Скидаємо режим
+        batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE);
+        lightMask.draw(batch, 1);
+        batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         batch.end();
         Gdx.gl.glDisable(GL20.GL_BLEND);
     }
@@ -108,7 +105,7 @@ public class LevelScreen2 extends BaseScreen {
     public void dispose() {
         super.dispose();
         shapeRenderer.dispose();
-        batch.dispose(); // Очищаємо SpriteBatch
+        batch.dispose();
     }
 
     public void update(float dt) {

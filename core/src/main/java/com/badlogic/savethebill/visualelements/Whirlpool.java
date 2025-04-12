@@ -1,4 +1,4 @@
-package com.badlogic.savethebill.objects;
+package com.badlogic.savethebill.visualelements;
 
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.savethebill.BaseActor;

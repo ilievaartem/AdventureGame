@@ -2,20 +2,35 @@ package com.badlogic.savethebill.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.scenes.scene2d.Event;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.InputEvent.Type;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
+import com.badlogic.gdx.scenes.scene2d.ui.Button;
+import com.badlogic.gdx.scenes.scene2d.ui.Button.ButtonStyle;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.savethebill.BaseActor;
 import com.badlogic.savethebill.BaseGame;
+import com.badlogic.savethebill.BillGame;
 import com.badlogic.savethebill.characters.MainCharacter;
 import com.badlogic.savethebill.characters.Orc;
-import com.badlogic.savethebill.objects.Rock;
-import com.badlogic.savethebill.objects.Whirlpool;
 import com.badlogic.savethebill.characters.Zoro;
+import com.badlogic.savethebill.objects.Rock;
+import com.badlogic.savethebill.objects.Sign;
+import com.badlogic.savethebill.visualelements.DialogBox;
+import com.badlogic.savethebill.visualelements.Whirlpool;
 
 public class LevelScreen extends BaseScreen {
     private MainCharacter mainCharacter;
     private boolean win;
     private boolean gameOver;
     private BaseActor continueMessage;
+    private Label npcLabel;
+    private DialogBox dialogBox;
 
     public void initialize() {
         BaseActor grass = new BaseActor(0, 0, mainStage);
@@ -27,7 +42,6 @@ public class LevelScreen extends BaseScreen {
         new Zoro(500, 100, mainStage);
         new Zoro(100, 450, mainStage);
         new Zoro(200, 250, mainStage);
-//        new Zoro(800, 750, mainStage);
 
         new Rock(200, 150, mainStage);
         new Rock(100, 300, mainStage);
@@ -38,10 +52,58 @@ public class LevelScreen extends BaseScreen {
         new Orc(300, 200, mainStage);
         new Orc(400, 300, mainStage);
 
+        Sign sign1 = new Sign(20, 400, mainStage);
+        sign1.setText("West Village Valley");
+        Sign sign2 = new Sign(600, 300, mainStage);
+        sign2.setText("East Village Valley");
+
         mainCharacter = new MainCharacter(20, 20, mainStage);
         win = false;
         gameOver = false;
         continueMessage = null;
+
+        npcLabel = new Label("NPC Left:", BaseGame.labelStyle);
+        npcLabel.setColor(Color.CYAN);
+//        npcLabel.setPosition(15, 550);
+//        uiStage.addActor(npcLabel);
+
+        ButtonStyle buttonStyle = new ButtonStyle();
+
+        Texture buttonTex = new Texture(Gdx.files.internal("undo.png"));
+        TextureRegion buttonRegion = new TextureRegion(buttonTex);
+        buttonStyle.up = new TextureRegionDrawable(buttonRegion);
+
+        Button restartButton = new Button(buttonStyle);
+        restartButton.setColor(Color.CYAN);
+//        restartButton.setPosition(735,540);
+//        uiStage.addActor(restartButton);
+
+        restartButton.addListener(
+            (Event e) ->
+            {
+                if (!(e instanceof InputEvent) ||
+                    !((InputEvent) e).getType().equals(Type.touchDown))
+                    return false;
+                BillGame.setActiveScreen(new LevelScreen());
+                return false;
+            }
+        );
+
+        uiTable.pad(10);
+        uiTable.add(npcLabel).top();
+        uiTable.add().expandX().expandY();
+        uiTable.add(restartButton).top();
+
+        dialogBox = new DialogBox(0, 0, uiStage);
+        dialogBox.setBackgroundColor(Color.TAN);
+        dialogBox.setFontColor(Color.BROWN);
+        dialogBox.setDialogSize(600, 100);
+        dialogBox.setFontScale(0.80f);
+        dialogBox.alignCenter();
+        dialogBox.setVisible(false);
+
+        uiTable.row();
+        uiTable.add(dialogBox).colspan(3);
     }
 
     public void update(float dt) {
@@ -58,6 +120,27 @@ public class LevelScreen extends BaseScreen {
                 Whirlpool whirl = new Whirlpool(0, 0, mainStage);
                 whirl.centerAtActor(zoro);
                 whirl.setOpacity(0.25f);
+            }
+        }
+
+        npcLabel.setText("Zoro's Left: " + BaseActor.count(mainStage, "com.badlogic.savethebill.characters.Zoro"));
+
+        for ( BaseActor signActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.objects.Sign") )
+        {
+            Sign sign = (Sign)signActor;
+            mainCharacter.preventOverlap(sign);
+            boolean nearby = mainCharacter.isWithinDistance(4, sign);
+            if ( nearby && !sign.isViewing() )
+            {
+                dialogBox.setText( sign.getText() );
+                dialogBox.setVisible( true );
+                sign.setViewing( true );
+            }
+            if (sign.isViewing() && !nearby)
+            {
+                dialogBox.setText( " " );
+                dialogBox.setVisible( false );
+                sign.setViewing( false );
             }
         }
         for (BaseActor orcActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.characters.Orc")) {
