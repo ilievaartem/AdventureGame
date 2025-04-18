@@ -2,6 +2,8 @@ package com.badlogic.savethebill.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -31,6 +33,14 @@ public class LevelScreen extends BaseScreen {
     private BaseActor continueMessage;
     private Label npcLabel;
     private DialogBox dialogBox;
+    private float audioVolume;
+    private Sound pickUp;
+    private Music instrumental;
+    private Music windSurf;
+    private boolean isMuted = false;
+    private static final float INSTRUMENTAL_VOLUME = 0.1f;
+    private static final float WIND_VOLUME = 0.1f;
+    private static final float DROP_VOLUME = 0.1f;
 
     public void initialize() {
         BaseActor grass = new BaseActor(0, 0, mainStage);
@@ -64,8 +74,6 @@ public class LevelScreen extends BaseScreen {
 
         npcLabel = new Label("NPC Left:", BaseGame.labelStyle);
         npcLabel.setColor(Color.CYAN);
-//        npcLabel.setPosition(15, 550);
-//        uiStage.addActor(npcLabel);
 
         ButtonStyle buttonStyle = new ButtonStyle();
 
@@ -75,8 +83,6 @@ public class LevelScreen extends BaseScreen {
 
         Button restartButton = new Button(buttonStyle);
         restartButton.setColor(Color.CYAN);
-//        restartButton.setPosition(735,540);
-//        uiStage.addActor(restartButton);
 
         restartButton.addListener(
             (Event e) ->
@@ -84,14 +90,50 @@ public class LevelScreen extends BaseScreen {
                 if (!(e instanceof InputEvent) ||
                     !((InputEvent) e).getType().equals(Type.touchDown))
                     return false;
+
+                instrumental.dispose();
+                windSurf.dispose();
+
                 BillGame.setActiveScreen(new LevelScreen());
                 return false;
+            }
+        );
+
+        ButtonStyle buttonStyle2 = new ButtonStyle();
+
+        Texture buttonTex2 = new Texture(Gdx.files.internal("audio.png"));
+        Texture buttonTex2Muted = new Texture(Gdx.files.internal("no-audio.png"));
+
+        TextureRegion buttonRegion2 = new TextureRegion(buttonTex2);
+        TextureRegion buttonRegion2Muted = new TextureRegion(buttonTex2Muted);
+
+        buttonStyle2.up = new TextureRegionDrawable(buttonRegion2);
+
+        Button muteButton = new Button(buttonStyle2);
+        muteButton.setColor(Color.CYAN);
+
+        muteButton.addListener(
+            (Event e) ->
+            {
+                if (!isTouchDownEvent(e))
+                    return false;
+
+                isMuted = !isMuted;
+                instrumental.setVolume(isMuted ? 0 : INSTRUMENTAL_VOLUME);
+                windSurf.setVolume(isMuted ? 0 : WIND_VOLUME);
+
+                muteButton.getStyle().up = isMuted
+                    ? new TextureRegionDrawable(buttonRegion2Muted)
+                    : new TextureRegionDrawable(buttonRegion2);
+
+                return true;
             }
         );
 
         uiTable.pad(10);
         uiTable.add(npcLabel).top();
         uiTable.add().expandX().expandY();
+        uiTable.add(muteButton).top();
         uiTable.add(restartButton).top();
 
         dialogBox = new DialogBox(0, 0, uiStage);
@@ -103,7 +145,20 @@ public class LevelScreen extends BaseScreen {
         dialogBox.setVisible(false);
 
         uiTable.row();
-        uiTable.add(dialogBox).colspan(3);
+        uiTable.add(dialogBox).colspan(4);
+
+        //TODO знайти інший звук для знаходження NPC
+        pickUp = Gdx.audio.newSound(Gdx.files.internal("Power_Drain.ogg"));
+        instrumental = Gdx.audio.newMusic(Gdx.files.internal("Master_of_the_Feast.ogg"));
+        windSurf = Gdx.audio.newMusic(Gdx.files.internal("Birds_Wind.ogg"));
+
+        audioVolume = 1.00f;
+        instrumental.setLooping(true);
+        instrumental.setVolume(INSTRUMENTAL_VOLUME);
+        instrumental.play();
+        windSurf.setLooping(true);
+        windSurf.setVolume(WIND_VOLUME);
+        windSurf.play();
     }
 
     public void update(float dt) {
@@ -113,6 +168,7 @@ public class LevelScreen extends BaseScreen {
             Zoro zoro = (Zoro) zoroActor;
             if (mainCharacter.overlaps(zoro) && !zoro.collected) {
                 zoro.collected = true;
+                pickUp.play(DROP_VOLUME * audioVolume);
                 zoro.clearActions();
                 zoro.addAction(Actions.fadeOut(1));
                 zoro.addAction(Actions.after(Actions.removeActor()));
@@ -125,22 +181,19 @@ public class LevelScreen extends BaseScreen {
 
         npcLabel.setText("Zoro's Left: " + BaseActor.count(mainStage, "com.badlogic.savethebill.characters.Zoro"));
 
-        for ( BaseActor signActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.objects.Sign") )
-        {
-            Sign sign = (Sign)signActor;
+        for (BaseActor signActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.objects.Sign")) {
+            Sign sign = (Sign) signActor;
             mainCharacter.preventOverlap(sign);
             boolean nearby = mainCharacter.isWithinDistance(4, sign);
-            if ( nearby && !sign.isViewing() )
-            {
-                dialogBox.setText( sign.getText() );
-                dialogBox.setVisible( true );
-                sign.setViewing( true );
+            if (nearby && !sign.isViewing()) {
+                dialogBox.setText(sign.getText());
+                dialogBox.setVisible(true);
+                sign.setViewing(true);
             }
-            if (sign.isViewing() && !nearby)
-            {
-                dialogBox.setText( " " );
-                dialogBox.setVisible( false );
-                sign.setViewing( false );
+            if (sign.isViewing() && !nearby) {
+                dialogBox.setText(" ");
+                dialogBox.setVisible(false);
+                sign.setViewing(false);
             }
         }
         for (BaseActor orcActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.characters.Orc")) {
@@ -173,6 +226,8 @@ public class LevelScreen extends BaseScreen {
             continueMessage.addAction(Actions.after(Actions.fadeIn(1)));
         }
         if (win && Gdx.input.isKeyPressed(Input.Keys.C)) {
+            instrumental.stop();
+            windSurf.stop();
             BaseGame.setActiveScreen(new LevelScreen2());
         }
     }

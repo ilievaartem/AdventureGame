@@ -6,13 +6,22 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.scenes.scene2d.Event;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.InputEvent.Type;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
+import com.badlogic.gdx.scenes.scene2d.ui.Button;
+import com.badlogic.gdx.scenes.scene2d.ui.Button.ButtonStyle;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.savethebill.BaseActor;
 import com.badlogic.savethebill.BaseGame;
+import com.badlogic.savethebill.BillGame;
 import com.badlogic.savethebill.characters.MainCharacter;
 import com.badlogic.savethebill.objects.ChristmasTree;
-import com.badlogic.savethebill.visualelements.LightMask;
-
+import com.badlogic.gdx.audio.Music;
 import java.util.Random;
 import java.util.Stack;
 
@@ -23,14 +32,18 @@ public class LevelScreen2 extends BaseScreen {
     private BaseActor youWinMessage;
     private BaseActor continueMessage;
     private Rectangle worldBounds;
-    private LightMask lightMask;
+    private Music instrumental;
+    private Music windSurf;
+    private boolean isMuted = false;
     private ShapeRenderer shapeRenderer;
     private SpriteBatch batch;
-
+    private float crowSoundTimer = 0;
+    private static final float INSTRUMENTAL_VOLUME = 0.1f;
+    private static final float WIND_VOLUME = 0.1f;
+    private static final float CROW_SOUND_INTERVAL = 10.0f;
     private static final int MAZE_WIDTH = 41;
     private static final int MAZE_HEIGHT = 41;
     private static final int CELL_SIZE = 48;
-
     private boolean[][] maze;
 
     public void initialize() {
@@ -60,20 +73,77 @@ public class LevelScreen2 extends BaseScreen {
 
         maze[entranceX][entranceY] = true;
         maze[exitX][exitY] = true;
-        int lightRadius = 100;
-        lightMask = new LightMask(0, 0, mainStage, lightRadius);
 
         mainCharacter = new MainCharacter(entranceX * CELL_SIZE, entranceY * CELL_SIZE, mainStage);
-
-        lightMask.updatePosition(
-            mainCharacter.getX() + mainCharacter.getWidth() / 2,
-            mainCharacter.getY() + mainCharacter.getHeight() / 2
-        );
 
         win = false;
         gameOver = false;
         youWinMessage = null;
         continueMessage = null;
+
+        ButtonStyle buttonStyle = new ButtonStyle();
+        Texture buttonTex = new Texture(Gdx.files.internal("undo.png"));
+        TextureRegion buttonRegion = new TextureRegion(buttonTex);
+        buttonStyle.up = new TextureRegionDrawable(buttonRegion);
+
+        Button restartButton = new Button(buttonStyle);
+        restartButton.setColor(Color.CYAN);
+
+        restartButton.addListener(
+            (Event e) ->
+            {
+                if (!(e instanceof InputEvent) ||
+                    !((InputEvent) e).getType().equals(Type.touchDown))
+                    return false;
+
+                instrumental.dispose();
+                windSurf.dispose();
+
+                BillGame.setActiveScreen(new LevelScreen2());
+                return false;
+            }
+        );
+
+        ButtonStyle buttonStyle2 = new ButtonStyle();
+        Texture buttonTex2 = new Texture(Gdx.files.internal("audio.png"));
+        Texture buttonTex2Muted = new Texture(Gdx.files.internal("no-audio.png"));
+        TextureRegion buttonRegion2 = new TextureRegion(buttonTex2);
+        TextureRegion buttonRegion2Muted = new TextureRegion(buttonTex2Muted);
+        buttonStyle2.up = new TextureRegionDrawable(buttonRegion2);
+
+        Button muteButton = new Button(buttonStyle2);
+        muteButton.setColor(Color.CYAN);
+
+        muteButton.addListener(
+            (Event e) ->
+            {
+                if (!(e instanceof InputEvent) ||
+                    !((InputEvent) e).getType().equals(Type.touchDown))
+                    return false;
+
+                isMuted = !isMuted;
+                instrumental.setVolume(isMuted ? 0 : INSTRUMENTAL_VOLUME);
+                windSurf.setVolume(isMuted ? 0 : WIND_VOLUME);
+
+                muteButton.getStyle().up = isMuted
+                    ? new TextureRegionDrawable(buttonRegion2Muted)
+                    : new TextureRegionDrawable(buttonRegion2);
+
+                return true;
+            }
+        );
+
+        uiTable.pad(10);
+        uiTable.add().expandX().expandY();
+        uiTable.add(muteButton).top();
+        uiTable.add(restartButton).top();
+
+        instrumental = Gdx.audio.newMusic(Gdx.files.internal("Birds_Wind_Synth.ogg"));
+        windSurf = Gdx.audio.newMusic(Gdx.files.internal("Scary_Сrow_Сaw.ogg"));
+
+        instrumental.setLooping(true);
+        instrumental.setVolume(INSTRUMENTAL_VOLUME);
+        instrumental.play();
     }
 
     @Override
@@ -83,6 +153,8 @@ public class LevelScreen2 extends BaseScreen {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         mainStage.act(delta);
         mainStage.draw();
+        uiStage.act(delta);
+        uiStage.draw();
 
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
@@ -91,14 +163,6 @@ public class LevelScreen2 extends BaseScreen {
         shapeRenderer.rect(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         shapeRenderer.end();
         Gdx.gl.glDisable(GL20.GL_BLEND);
-
-        Gdx.gl.glEnable(GL20.GL_BLEND);
-        batch.begin();
-        batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE);
-        lightMask.draw(batch, 1);
-        batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-        batch.end();
-        Gdx.gl.glDisable(GL20.GL_BLEND);
     }
 
     @Override
@@ -106,11 +170,23 @@ public class LevelScreen2 extends BaseScreen {
         super.dispose();
         shapeRenderer.dispose();
         batch.dispose();
+        instrumental.dispose();
+        windSurf.dispose();
     }
 
     public void update(float dt) {
         for (BaseActor christmasTreeActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.objects.ChristmasTree"))
             mainCharacter.preventOverlap(christmasTreeActor);
+
+        // Handle crow sound timing
+        if (!isMuted) {
+            crowSoundTimer += dt;
+            if (crowSoundTimer >= CROW_SOUND_INTERVAL) {
+                windSurf.play();
+                windSurf.setVolume(WIND_VOLUME);
+                crowSoundTimer = 0;
+            }
+        }
 
         if (mainCharacter.getX() + mainCharacter.getWidth() >= this.worldBounds.width && !win && !gameOver) {
             win = true;
@@ -129,13 +205,10 @@ public class LevelScreen2 extends BaseScreen {
         }
 
         if (win && Gdx.input.isKeyPressed(Input.Keys.C)) {
+            instrumental.stop();
+            windSurf.stop();
             BaseGame.setActiveScreen(new LevelScreen());
         }
-
-        lightMask.updatePosition(
-            mainCharacter.getX() + mainCharacter.getWidth() / 2,
-            mainCharacter.getY() + mainCharacter.getHeight() / 2
-        );
 
         mainCharacter.alignCamera();
     }
