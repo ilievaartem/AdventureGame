@@ -13,20 +13,12 @@ import com.badlogic.savethebill.BillGame;
 public class MenuScreen extends BaseScreen {
     public void initialize() {
         BaseActor grass = new BaseActor(0, 0, mainStage);
-        grass.loadTexture("grass.jpg");
-        grass.setSize(800, 600);
+        grass.loadTexture("Summer5.png");
+        grass.setSize(mainStage.getViewport().getWorldWidth(), mainStage.getViewport().getWorldHeight());
         BaseActor title = new BaseActor(0, 0, mainStage);
         title.loadTexture("game-name.png");
-//        title.centerAtPosition(400,300);
-//        title.moveBy(0,100);
-//        BaseActor start = new BaseActor(0,0, mainStage);
-//        start.loadTexture( "message-start.png" );
-//        start.centerAtPosition(400,300);
-//        start.moveBy(0,-100);
 
         TextButton startButton = new TextButton("Start", BaseGame.textButtonStyle);
-//        startButton.setPosition(150, 150);
-//        uiStage.addActor(startButton);
 
         startButton.addListener(
             (Event e) ->
@@ -40,8 +32,6 @@ public class MenuScreen extends BaseScreen {
         );
 
         TextButton quitButton = new TextButton("Quit", BaseGame.textButtonStyle);
-//        quitButton.setPosition(500, 150);
-//        uiStage.addActor(quitButton);
 
         quitButton.addListener(
             (Event e) ->

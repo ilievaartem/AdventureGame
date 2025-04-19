@@ -10,15 +10,24 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputEvent.Type;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.utils.viewport.FitViewport;
 
 public abstract class BaseScreen implements Screen, InputProcessor {
     protected Stage mainStage;
     protected Stage uiStage;
     protected Table uiTable;
+    protected FitViewport mainViewport;
+    protected FitViewport uiViewport;
+
+    protected static final int WORLD_WIDTH = 800;
+    protected static final int WORLD_HEIGHT = 600;
 
     public BaseScreen() {
-        mainStage = new Stage();
-        uiStage = new Stage();
+        mainViewport = new FitViewport(WORLD_WIDTH, WORLD_HEIGHT);
+        uiViewport = new FitViewport(WORLD_WIDTH, WORLD_HEIGHT);
+
+        mainStage = new Stage(mainViewport);
+        uiStage = new Stage(uiViewport);
 
         uiTable = new Table();
         uiTable.setFillParent(true);
@@ -41,7 +50,10 @@ public abstract class BaseScreen implements Screen, InputProcessor {
         uiStage.draw();
     }
 
+    @Override
     public void resize(int width, int height) {
+        mainViewport.update(width, height, true);
+        uiViewport.update(width, height, true);
     }
 
     public void pause() {
@@ -68,6 +80,14 @@ public abstract class BaseScreen implements Screen, InputProcessor {
     }
 
     public boolean keyDown(int keycode) {
+        if (keycode == com.badlogic.gdx.Input.Keys.F) {
+            if (Gdx.graphics.isFullscreen()) {
+                Gdx.graphics.setWindowedMode(800, 600);
+            } else {
+                Gdx.graphics.setFullscreenMode(Gdx.graphics.getDisplayMode());
+            }
+            return true;
+        }
         return false;
     }
 

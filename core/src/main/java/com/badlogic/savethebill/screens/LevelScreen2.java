@@ -41,8 +41,8 @@ public class LevelScreen2 extends BaseScreen {
     private static final float INSTRUMENTAL_VOLUME = 0.1f;
     private static final float WIND_VOLUME = 0.1f;
     private static final float CROW_SOUND_INTERVAL = 10.0f;
-    private static final int MAZE_WIDTH = 41;
-    private static final int MAZE_HEIGHT = 41;
+    private static final int MAZE_WIDTH = 24;
+    private static final int MAZE_HEIGHT = 24;
     private static final int CELL_SIZE = 48;
     private boolean[][] maze;
 
@@ -52,9 +52,9 @@ public class LevelScreen2 extends BaseScreen {
 
         BaseActor grass = new BaseActor(0, 0, mainStage);
         grass.loadTexture("grass-2.png");
-        grass.setSize(2000, 2000);
-        BaseActor.setWorldBounds(grass);
-        this.worldBounds = new Rectangle(0, 0, 2000, 2000);
+        grass.setSize(1152, 1152);
+        BaseActor.setWorldBounds(1152, 1152);
+        this.worldBounds = new Rectangle(0, 0, 1152, 1152);
 
         generateMaze();
 
@@ -158,9 +158,10 @@ public class LevelScreen2 extends BaseScreen {
 
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapeRenderer.setProjectionMatrix(mainStage.getCamera().combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         shapeRenderer.setColor(0, 0, 0, 0.7f);
-        shapeRenderer.rect(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        shapeRenderer.rect(worldBounds.x, worldBounds.y, worldBounds.width, worldBounds.height);
         shapeRenderer.end();
         Gdx.gl.glDisable(GL20.GL_BLEND);
     }
@@ -178,7 +179,6 @@ public class LevelScreen2 extends BaseScreen {
         for (BaseActor christmasTreeActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.objects.ChristmasTree"))
             mainCharacter.preventOverlap(christmasTreeActor);
 
-        // Handle crow sound timing
         if (!isMuted) {
             crowSoundTimer += dt;
             if (crowSoundTimer >= CROW_SOUND_INTERVAL) {
@@ -188,7 +188,7 @@ public class LevelScreen2 extends BaseScreen {
             }
         }
 
-        if (mainCharacter.getX() + mainCharacter.getWidth() >= this.worldBounds.width && !win && !gameOver) {
+        if (mainCharacter.getX() + mainCharacter.getWidth() >= (MAZE_WIDTH - 1) * CELL_SIZE && !win && !gameOver) {
             win = true;
             youWinMessage = new BaseActor(0, 0, mainStage);
             youWinMessage.loadTexture("you-win.png");

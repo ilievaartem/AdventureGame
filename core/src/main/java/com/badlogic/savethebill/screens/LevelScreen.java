@@ -7,6 +7,8 @@ import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.maps.MapObject;
+import com.badlogic.gdx.maps.MapProperties;
 import com.badlogic.gdx.scenes.scene2d.Event;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputEvent.Type;
@@ -24,6 +26,7 @@ import com.badlogic.savethebill.characters.Zoro;
 import com.badlogic.savethebill.objects.Rock;
 import com.badlogic.savethebill.objects.Sign;
 import com.badlogic.savethebill.visualelements.DialogBox;
+import com.badlogic.savethebill.visualelements.TilemapActor;
 import com.badlogic.savethebill.visualelements.Whirlpool;
 
 public class LevelScreen extends BaseScreen {
@@ -43,31 +46,31 @@ public class LevelScreen extends BaseScreen {
     private static final float DROP_VOLUME = 0.1f;
 
     public void initialize() {
-        BaseActor grass = new BaseActor(0, 0, mainStage);
-        grass.loadTexture("grass.jpg");
-        grass.setSize(1200, 900);
-        BaseActor.setWorldBounds(grass);
+        TilemapActor tma = new TilemapActor("map.tmx", mainStage);
 
-        new Zoro(400, 400, mainStage);
-        new Zoro(500, 100, mainStage);
-        new Zoro(100, 450, mainStage);
-        new Zoro(200, 250, mainStage);
+        for (MapObject obj : tma.getTileList("Zoro")) {
+            MapProperties props = obj.getProperties();
+            new Zoro((float) props.get("x"), (float) props.get("y"), mainStage);
+        }
+        for (MapObject obj : tma.getTileList("Orc")) {
+            MapProperties props = obj.getProperties();
+            new Orc((float) props.get("x"), (float) props.get("y"), mainStage);
+        }
+        for (MapObject obj : tma.getTileList("Rock")) {
+            MapProperties props = obj.getProperties();
+            new Rock((float) props.get("x"), (float) props.get("y"), mainStage);
+        }
+        for (MapObject obj : tma.getTileList("Sign")) {
+            MapProperties props = obj.getProperties();
+            Sign s = new Sign((float) props.get("x"), (float) props.get("y"), mainStage);
+            s.setText((String) props.get("message"));
+        }
 
-        new Rock(200, 150, mainStage);
-        new Rock(100, 300, mainStage);
-        new Rock(300, 350, mainStage);
-        new Rock(450, 200, mainStage);
-        new Rock(850, 700, mainStage);
+        MapObject startPoint = tma.getRectangleList("Start").get(0);
+        MapProperties props = startPoint.getProperties();
 
-        new Orc(300, 200, mainStage);
-        new Orc(400, 300, mainStage);
+        mainCharacter = new MainCharacter((float) props.get("x"), (float) props.get("y"), mainStage);
 
-        Sign sign1 = new Sign(20, 400, mainStage);
-        sign1.setText("West Village Valley");
-        Sign sign2 = new Sign(600, 300, mainStage);
-        sign2.setText("East Village Valley");
-
-        mainCharacter = new MainCharacter(20, 20, mainStage);
         win = false;
         gameOver = false;
         continueMessage = null;
@@ -213,15 +216,14 @@ public class LevelScreen extends BaseScreen {
             win = true;
             BaseActor youWinMessage = new BaseActor(0, 0, mainStage);
             youWinMessage.loadTexture("you-win.png");
-            youWinMessage.centerAtPosition(400, 300);
+            youWinMessage.centerAtPosition(mainViewport.getWorldWidth() / 2, mainViewport.getWorldHeight() / 2);
             youWinMessage.setOpacity(0);
             youWinMessage.addAction(Actions.delay(1));
             youWinMessage.addAction(Actions.after(Actions.fadeIn(1)));
 
             continueMessage = new BaseActor(0, 0, mainStage);
             continueMessage.loadTexture("message-continue.png");
-            continueMessage.centerAtPosition(400, 200);
-            continueMessage.setOpacity(0);
+            continueMessage.centerAtPosition(mainViewport.getWorldWidth() / 2, mainViewport.getWorldHeight() / 2 - 100);
             continueMessage.addAction(Actions.delay(2));
             continueMessage.addAction(Actions.after(Actions.fadeIn(1)));
         }

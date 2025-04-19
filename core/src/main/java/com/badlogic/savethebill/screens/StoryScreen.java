@@ -1,8 +1,6 @@
 package com.badlogic.savethebill.screens;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
-import com.badlogic.gdx.scenes.scene2d.Action;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.savethebill.BaseActor;
@@ -21,16 +19,16 @@ public class StoryScreen extends BaseScreen
     {
         BaseActor background = new BaseActor(0,0, mainStage);
         background.loadTexture( "valleyside.png" );
-        background.setSize(800,600);
+        background.setSize(mainStage.getViewport().getWorldWidth(), mainStage.getViewport().getWorldHeight());
         background.setOpacity(0);
         BaseActor.setWorldBounds(background);
 
-        BaseActor turtle = new BaseActor(0,0, mainStage);
-        turtle.loadTexture( "npc-big.png" );
-        turtle.setPosition( -turtle.getWidth(), 0 );
+        BaseActor excusedNPC = new BaseActor(0,0, mainStage);
+        excusedNPC.loadTexture( "npc-big.png" );
+        excusedNPC.setPosition( -excusedNPC.getWidth(), 0 );
 
         DialogBox dialogBox = new DialogBox(0,0, uiStage);
-        dialogBox.setDialogSize(600, 200);
+        dialogBox.setDialogSize(uiStage.getViewport().getWorldWidth() * 0.75f, uiStage.getViewport().getWorldHeight() * 0.25f);
         dialogBox.setBackgroundColor( new Color(0.6f, 0.6f, 0.8f, 1) );
         dialogBox.setFontScale(0.75f);
         dialogBox.setVisible(false);
@@ -49,7 +47,7 @@ public class StoryScreen extends BaseScreen
         mainStage.addActor(scene);
 
         scene.addSegment( new SceneSegment( background, Actions.fadeIn(1) ));
-        scene.addSegment( new SceneSegment( turtle, SceneActions.moveToScreenCenter(2) ));
+        scene.addSegment( new SceneSegment(excusedNPC, SceneActions.moveToScreenCenter(2) ));
         scene.addSegment( new SceneSegment( dialogBox, Actions.show() ));
 
         scene.addSegment( new SceneSegment( dialogBox,
@@ -67,7 +65,7 @@ public class StoryScreen extends BaseScreen
         scene.addSegment( new SceneSegment( continueKey, Actions.hide() ));
 
         scene.addSegment( new SceneSegment( dialogBox, Actions.hide() ) );
-        scene.addSegment( new SceneSegment( turtle, SceneActions.moveToOutsideRight(1) ));
+        scene.addSegment( new SceneSegment(excusedNPC, SceneActions.moveToOutsideRight(1) ));
         scene.addSegment( new SceneSegment( background, Actions.fadeOut(1) ));
 
         scene.start();
