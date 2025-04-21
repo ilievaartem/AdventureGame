@@ -207,7 +207,7 @@ public class LevelScreen2 extends BaseScreen {
         if (win && Gdx.input.isKeyPressed(Input.Keys.C)) {
             instrumental.stop();
             windSurf.stop();
-            BaseGame.setActiveScreen(new LevelScreen());
+            BaseGame.setActiveScreen(new LevelScreen3());
         }
 
         mainCharacter.alignCamera();
