@@ -7,7 +7,7 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.savethebill.BaseActor;
 
-public class MainCharacter extends BaseActor {
+public class IcyHeroMovement extends BaseActor {
     private Animation<TextureRegion> walkDownAnimation;
     private Animation<TextureRegion> walkUpAnimation;
     private Animation<TextureRegion> walkLeftAnimation;
@@ -22,7 +22,7 @@ public class MainCharacter extends BaseActor {
     private float normalSpeed = 100;
     private float sprintSpeed = 150;
 
-    public MainCharacter(float x, float y, Stage s) {
+    public IcyHeroMovement(float x, float y, Stage s) {
         super(x, y, s);
 
         walkDownAnimation = loadAnimationFromFiles(new String[]{"character-1.png", "character-2.png"}, 0.2f, true);
@@ -107,5 +107,19 @@ public class MainCharacter extends BaseActor {
         applyPhysics(dt);
         boundToWorld();
         alignCamera();
+    }
+
+    public float getFacingAngle() {
+        switch (currentDirection) {
+            case "up":
+                return 90;
+            case "down":
+                return 270;
+            case "left":
+                return 180;
+            case "right":
+            default:
+                return 0;
+        }
     }
 }

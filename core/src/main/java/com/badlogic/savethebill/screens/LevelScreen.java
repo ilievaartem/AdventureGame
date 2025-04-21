@@ -2,6 +2,7 @@ package com.badlogic.savethebill.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
+import com.badlogic.gdx.Input.Buttons;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.maps.MapObject;
 import com.badlogic.gdx.maps.MapProperties;
@@ -45,6 +46,9 @@ public class LevelScreen extends BaseScreen {
     ShopArrow shopArrow;
 
     private boolean isFullscreen = true;
+    private float timeSinceVictory = 0;
+    private boolean victoryAchieved = false;
+    private boolean allFlyersDefeated = false;
 
     public void initialize() {
         Gdx.graphics.setFullscreenMode(Gdx.graphics.getDisplayMode());
@@ -151,145 +155,170 @@ public class LevelScreen extends BaseScreen {
     }
 
     public void update(float dt) {
-        if (gameOver)
-            return;
-
         healthLabel.setText(" x " + health);
         coinLabel.setText(" x " + coins);
         arrowLabel.setText(" x " + arrows);
 
-        if (!sword.isVisible()) {
-            if (Gdx.input.isKeyPressed(Keys.LEFT))
-                hero.accelerateAtAngle(180);
-            if (Gdx.input.isKeyPressed(Keys.RIGHT))
-                hero.accelerateAtAngle(0);
-            if (Gdx.input.isKeyPressed(Keys.UP))
-                hero.accelerateAtAngle(90);
-            if (Gdx.input.isKeyPressed(Keys.DOWN))
-                hero.accelerateAtAngle(270);
-        }
+        if (!gameOver) {
+            if (!sword.isVisible()) {
+                if (Gdx.input.isKeyPressed(Keys.W))
+                    hero.accelerateAtAngle(90);
+                if (Gdx.input.isKeyPressed(Keys.S))
+                    hero.accelerateAtAngle(270);
+                if (Gdx.input.isKeyPressed(Keys.A))
+                    hero.accelerateAtAngle(180);
+                if (Gdx.input.isKeyPressed(Keys.D))
+                    hero.accelerateAtAngle(0);
 
-        for (BaseActor solid : BaseActor.getList(mainStage, "com.badlogic.savethebill.objects.Solid")) {
-            hero.preventOverlap(solid);
-
-            for (BaseActor flyer : BaseActor.getList(mainStage, "com.badlogic.savethebill.characters.Flyer")) {
-                if (flyer.overlaps(solid)) {
-                    flyer.preventOverlap(solid);
-                    flyer.setMotionAngle(flyer.getMotionAngle() + 180);
-                }
-            }
-        }
-
-        if (sword.isVisible()) {
-            for (BaseActor bush : BaseActor.getList(mainStage, "com.badlogic.savethebill.objects.Bush")) {
-                if (sword.overlaps(bush))
-                    bush.remove();
-            }
-
-            for (BaseActor flyer : BaseActor.getList(mainStage, "com.badlogic.savethebill.characters.Flyer")) {
-                if (sword.overlaps(flyer)) {
-                    flyer.remove();
-                    Coin coin = new Coin(0, 0, mainStage);
-                    coin.centerAtActor(flyer);
-                    Smoke smoke = new Smoke(0, 0, mainStage);
-                    smoke.centerAtActor(flyer);
-                }
-            }
-        }
-
-        for (BaseActor coin : BaseActor.getList(mainStage, "com.badlogic.savethebill.objects.Coin")) {
-            if (hero.overlaps(coin)) {
-                coin.remove();
-                coins++;
-            }
-        }
-
-        for (BaseActor flyer : BaseActor.getList(mainStage, "com.badlogic.savethebill.characters.Flyer")) {
-            if (hero.overlaps(flyer)) {
-                hero.preventOverlap(flyer);
-                flyer.setMotionAngle(flyer.getMotionAngle() + 180);
-                Vector2 heroPosition = new Vector2(hero.getX(), hero.getY());
-                Vector2 flyerPosition = new Vector2(flyer.getX(), flyer.getY());
-                Vector2 hitVector = heroPosition.sub(flyerPosition);
-                hero.setMotionAngle(hitVector.angle());
-                hero.setSpeed(100);
-                health--;
-            }
-        }
-
-        for (BaseActor npcActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.characters.NPC")) {
-            NPC npc = (NPC) npcActor;
-
-            hero.preventOverlap(npc);
-            boolean nearby = hero.isWithinDistance(4, npc);
-
-            if (nearby && !npc.isViewing()) {
-                if (npc.getID().equals("Gatekeeper")) {
-                    int flyerCount = BaseActor.count(mainStage, "com.badlogic.savethebill.characters.Flyer");
-                    String message = "Destroy the flyers and you can have the treasure. ";
-                    if (flyerCount > 1)
-                        message += "There are " + flyerCount + " left.";
-                    else if (flyerCount == 1)
-                        message += "There is " + flyerCount + " left.";
-                    else
-                    {
-                        message += "It is yours!";
-                        npc.addAction(Actions.fadeOut(5.0f));
-                        npc.addAction(Actions.after(Actions.moveBy(-10000, -10000)));
-                    }
-
-                    dialogBox.setText(message);
+                if (Gdx.input.isKeyPressed(Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Keys.SHIFT_RIGHT)) {
+                    hero.setMaxSpeed(200);
                 } else {
-                    dialogBox.setText(npc.getText());
+                    hero.setMaxSpeed(100);
                 }
-                dialogBox.setVisible(true);
-                npc.setViewing(true);
-            }
 
-            if (npc.isViewing() && !nearby) {
-                dialogBox.setText(" ");
-                dialogBox.setVisible(false);
-                npc.setViewing(false);
-            }
-        }
+                if (Gdx.input.isButtonJustPressed(Buttons.LEFT)) {
+                    swingSword();
+                }
 
-        if (hero.overlaps(treasure)) {
-            messageLabel.setText("You win!");
-            messageLabel.setColor(Color.LIME);
-            messageLabel.setFontScale(2);
-            messageLabel.setVisible(true);
-            treasure.remove();
-            gameOver = true;
-        }
-
-        if (health <= 0) {
-            messageLabel.setText("Game over...");
-            messageLabel.setColor(Color.RED);
-            messageLabel.setFontScale(2);
-            messageLabel.setVisible(true);
-            hero.remove();
-            gameOver = true;
-        }
-
-        for (BaseActor arrow : BaseActor.getList(mainStage, "com.badlogic.savethebill.objects.Arrow")) {
-            for (BaseActor flyer : BaseActor.getList(mainStage, "com.badlogic.savethebill.characters.Flyer")) {
-                if (arrow.overlaps(flyer)) {
-                    flyer.remove();
-                    arrow.remove();
-                    Coin coin = new Coin(0, 0, mainStage);
-                    coin.centerAtActor(flyer);
-                    Smoke smoke = new Smoke(0, 0, mainStage);
-                    smoke.centerAtActor(flyer);
+                if (Gdx.input.isButtonJustPressed(Buttons.RIGHT)) {
+                    shootArrow();
                 }
             }
 
             for (BaseActor solid : BaseActor.getList(mainStage, "com.badlogic.savethebill.objects.Solid")) {
-                if (arrow.overlaps(solid)) {
-                    arrow.preventOverlap(solid);
-                    arrow.setSpeed(0);
-                    arrow.addAction(Actions.fadeOut(0.5f));
-                    arrow.addAction(Actions.after(Actions.removeActor()));
+                hero.preventOverlap(solid);
+
+                for (BaseActor flyer : BaseActor.getList(mainStage, "com.badlogic.savethebill.characters.Flyer")) {
+                    if (flyer.overlaps(solid)) {
+                        flyer.preventOverlap(solid);
+                        flyer.setMotionAngle(flyer.getMotionAngle() + 180);
+                    }
                 }
+            }
+
+            if (sword.isVisible()) {
+                for (BaseActor bush : BaseActor.getList(mainStage, "com.badlogic.savethebill.objects.Bush")) {
+                    if (sword.overlaps(bush))
+                        bush.remove();
+                }
+
+                for (BaseActor flyer : BaseActor.getList(mainStage, "com.badlogic.savethebill.characters.Flyer")) {
+                    if (sword.overlaps(flyer)) {
+                        flyer.remove();
+                        Coin coin = new Coin(0, 0, mainStage);
+                        coin.centerAtActor(flyer);
+                        Smoke smoke = new Smoke(0, 0, mainStage);
+                        smoke.centerAtActor(flyer);
+                    }
+                }
+            }
+
+            for (BaseActor coin : BaseActor.getList(mainStage, "com.badlogic.savethebill.objects.Coin")) {
+                if (hero.overlaps(coin)) {
+                    coin.remove();
+                    coins++;
+                }
+            }
+
+            for (BaseActor flyer : BaseActor.getList(mainStage, "com.badlogic.savethebill.characters.Flyer")) {
+                if (hero.overlaps(flyer)) {
+                    hero.preventOverlap(flyer);
+                    flyer.setMotionAngle(flyer.getMotionAngle() + 180);
+                    Vector2 heroPosition = new Vector2(hero.getX(), hero.getY());
+                    Vector2 flyerPosition = new Vector2(flyer.getX(), flyer.getY());
+                    Vector2 hitVector = heroPosition.sub(flyerPosition);
+                    hero.setMotionAngle(hitVector.angle());
+                    hero.setSpeed(100);
+                    health--;
+                }
+            }
+
+            for (BaseActor npcActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.characters.NPC")) {
+                NPC npc = (NPC) npcActor;
+
+                hero.preventOverlap(npc);
+                boolean nearby = hero.isWithinDistance(4, npc);
+
+                if (nearby && !npc.isViewing()) {
+                    if (npc.getID().equals("Gatekeeper")) {
+                        int flyerCount = BaseActor.count(mainStage, "com.badlogic.savethebill.characters.Flyer");
+                        String message = "Destroy the flyers and you can have the treasure. ";
+                        if (flyerCount > 1)
+                            message += "There are " + flyerCount + " left.";
+                        else if (flyerCount == 1)
+                            message += "There is " + flyerCount + " left.";
+                        else {
+                            message += "It is yours!";
+                            npc.addAction(Actions.fadeOut(5.0f));
+                            npc.addAction(Actions.after(Actions.moveBy(-10000, -10000)));
+                        }
+
+                        dialogBox.setText(message);
+                    } else {
+                        dialogBox.setText(npc.getText());
+                    }
+                    dialogBox.setVisible(true);
+                    npc.setViewing(true);
+                }
+
+                if (npc.isViewing() && !nearby) {
+                    dialogBox.setText(" ");
+                    dialogBox.setVisible(false);
+                    npc.setViewing(false);
+                }
+            }
+
+            int flyerCount = BaseActor.count(mainStage, "com.badlogic.savethebill.characters.Flyer");
+            if (flyerCount == 0 && !allFlyersDefeated) {
+                allFlyersDefeated = true;
+            }
+
+            if (allFlyersDefeated && hero.overlaps(treasure) && !victoryAchieved) {
+                messageLabel.setText("You can go farther...");
+                messageLabel.setColor(Color.LIME);
+                messageLabel.setFontScale(2);
+                messageLabel.setVisible(true);
+                victoryAchieved = true;
+                gameOver = true;
+                treasure.remove();
+            }
+
+            if (health <= 0) {
+                messageLabel.setText("Game over...");
+                messageLabel.setColor(Color.RED);
+                messageLabel.setFontScale(2);
+                messageLabel.setVisible(true);
+                hero.remove();
+                gameOver = true;
+            }
+
+            for (BaseActor arrow : BaseActor.getList(mainStage, "com.badlogic.savethebill.objects.Arrow")) {
+                for (BaseActor flyer : BaseActor.getList(mainStage, "com.badlogic.savethebill.characters.Flyer")) {
+                    if (arrow.overlaps(flyer)) {
+                        flyer.remove();
+                        arrow.remove();
+                        Coin coin = new Coin(0, 0, mainStage);
+                        coin.centerAtActor(flyer);
+                        Smoke smoke = new Smoke(0, 0, mainStage);
+                        smoke.centerAtActor(flyer);
+                    }
+                }
+
+                for (BaseActor solid : BaseActor.getList(mainStage, "com.badlogic.savethebill.objects.Solid")) {
+                    if (arrow.overlaps(solid)) {
+                        arrow.preventOverlap(solid);
+                        arrow.setSpeed(0);
+                        arrow.addAction(Actions.fadeOut(0.5f));
+                        arrow.addAction(Actions.after(Actions.removeActor()));
+                    }
+                }
+            }
+        }
+
+        if (victoryAchieved) {
+            timeSinceVictory += dt;
+            if (timeSinceVictory >= 2.0f) {
+                BaseGame.setActiveScreen(new LevelScreen2(health, coins, arrows));
             }
         }
     }
@@ -356,13 +385,7 @@ public class LevelScreen extends BaseScreen {
             return true;
         }
 
-        if (keycode == Keys.S)
-            swingSword();
-
-        if (keycode == Keys.A)
-            shootArrow();
-
-        if (keycode == Keys.B) {
+        if (keycode == Keys.E) {
             if (hero.overlaps(shopHeart) && coins >= 3) {
                 coins -= 3;
                 health += 1;
@@ -372,6 +395,7 @@ public class LevelScreen extends BaseScreen {
                 coins -= 4;
                 arrows += 3;
             }
+            return true;
         }
         return false;
     }

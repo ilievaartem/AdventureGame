@@ -2,16 +2,19 @@ package com.badlogic.savethebill.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.Input.Buttons;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Event;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputEvent.Type;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Button;
 import com.badlogic.gdx.scenes.scene2d.ui.Button.ButtonStyle;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -19,14 +22,20 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.savethebill.BaseActor;
 import com.badlogic.savethebill.BaseGame;
 import com.badlogic.savethebill.BillGame;
-import com.badlogic.savethebill.characters.MainCharacter;
+import com.badlogic.savethebill.characters.IcyHeroMovement;
 import com.badlogic.savethebill.objects.ChristmasTree;
+import com.badlogic.savethebill.objects.Sword;
+import com.badlogic.savethebill.objects.Arrow;
 import com.badlogic.gdx.audio.Music;
 import java.util.Random;
 import java.util.Stack;
 
 public class LevelScreen2 extends BaseScreen {
-    private MainCharacter mainCharacter;
+    private IcyHeroMovement mainCharacter;
+    private Sword sword;
+    private int health;
+    private int coins;
+    private int arrows;
     private boolean win;
     private boolean gameOver;
     private BaseActor youWinMessage;
@@ -45,6 +54,19 @@ public class LevelScreen2 extends BaseScreen {
     private static final int MAZE_HEIGHT = 24;
     private static final int CELL_SIZE = 48;
     private boolean[][] maze;
+    private Label healthLabel;
+    private Label coinLabel;
+    private Label arrowLabel;
+
+    public LevelScreen2() {
+        this(3, 5, 3);
+    }
+
+    public LevelScreen2(int health, int coins, int arrows) {
+        this.health = health;
+        this.coins = coins;
+        this.arrows = arrows;
+    }
 
     public void initialize() {
         shapeRenderer = new ShapeRenderer();
@@ -74,12 +96,29 @@ public class LevelScreen2 extends BaseScreen {
         maze[entranceX][entranceY] = true;
         maze[exitX][exitY] = true;
 
-        mainCharacter = new MainCharacter(entranceX * CELL_SIZE, entranceY * CELL_SIZE, mainStage);
+        mainCharacter = new IcyHeroMovement(entranceX * CELL_SIZE, entranceY * CELL_SIZE, mainStage);
+
+        sword = new Sword(0, 0, mainStage);
+        sword.setVisible(false);
 
         win = false;
         gameOver = false;
         youWinMessage = null;
         continueMessage = null;
+
+        healthLabel = new Label(" x " + health, BaseGame.labelStyle);
+        healthLabel.setColor(Color.PINK);
+        coinLabel = new Label(" x " + coins, BaseGame.labelStyle);
+        coinLabel.setColor(Color.GOLD);
+        arrowLabel = new Label(" x " + arrows, BaseGame.labelStyle);
+        arrowLabel.setColor(Color.TAN);
+
+        BaseActor healthIcon = new BaseActor(0, 0, uiStage);
+        healthIcon.loadTexture("heart-icon.png");
+        BaseActor coinIcon = new BaseActor(0, 0, uiStage);
+        coinIcon.loadTexture("coin-icon1.png");
+        BaseActor arrowIcon = new BaseActor(0, 0, uiStage);
+        arrowIcon.loadTexture("arrow-icon.png");
 
         ButtonStyle buttonStyle = new ButtonStyle();
         Texture buttonTex = new Texture(Gdx.files.internal("undo.png"));
@@ -134,6 +173,15 @@ public class LevelScreen2 extends BaseScreen {
         );
 
         uiTable.pad(10);
+        uiTable.add(healthIcon);
+        uiTable.add(healthLabel);
+        uiTable.add().expandX();
+        uiTable.add(coinIcon);
+        uiTable.add(coinLabel);
+        uiTable.add().expandX();
+        uiTable.add(arrowIcon);
+        uiTable.add(arrowLabel);
+        uiTable.row();
         uiTable.add().expandX().expandY();
         uiTable.add(muteButton).top();
         uiTable.add(restartButton).top();
@@ -176,8 +224,38 @@ public class LevelScreen2 extends BaseScreen {
     }
 
     public void update(float dt) {
+        healthLabel.setText(" x " + health);
+        coinLabel.setText(" x " + coins);
+        arrowLabel.setText(" x " + arrows);
+
+        if (!win && !gameOver && !sword.isVisible()) {
+            if (Gdx.input.isButtonJustPressed(Buttons.LEFT)) {
+                swingSword();
+            }
+            if (Gdx.input.isButtonJustPressed(Buttons.RIGHT)) {
+                shootArrow();
+            }
+        }
+
         for (BaseActor christmasTreeActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.objects.ChristmasTree"))
             mainCharacter.preventOverlap(christmasTreeActor);
+
+        if (sword.isVisible()) {
+            for (BaseActor tree : BaseActor.getList(mainStage, "com.badlogic.savethebill.objects.ChristmasTree")) {
+                if (sword.overlaps(tree)) {
+                    tree.remove();
+                }
+            }
+        }
+
+        for (BaseActor arrow : BaseActor.getList(mainStage, "com.badlogic.savethebill.objects.Arrow")) {
+            for (BaseActor tree : BaseActor.getList(mainStage, "com.badlogic.savethebill.objects.ChristmasTree")) {
+                if (arrow.overlaps(tree)) {
+                    tree.remove();
+                    arrow.remove();
+                }
+            }
+        }
 
         if (!isMuted) {
             crowSoundTimer += dt;
@@ -207,10 +285,57 @@ public class LevelScreen2 extends BaseScreen {
         if (win && Gdx.input.isKeyPressed(Input.Keys.C)) {
             instrumental.stop();
             windSurf.stop();
-            BaseGame.setActiveScreen(new LevelScreen3());
+            BaseGame.setActiveScreen(new LevelScreen3(health, coins, arrows));
         }
 
         mainCharacter.alignCamera();
+    }
+
+    public void swingSword() {
+        if (sword.isVisible())
+            return;
+
+        mainCharacter.setSpeed(0);
+
+        float facingAngle = mainCharacter.getFacingAngle();
+
+        Vector2 offset = new Vector2();
+        if (facingAngle == 0)
+            offset.set(0.50f, 0.20f);
+        else if (facingAngle == 90)
+            offset.set(0.65f, 0.50f);
+        else if (facingAngle == 180)
+            offset.set(0.40f, 0.20f);
+        else
+            offset.set(0.25f, 0.20f);
+
+        sword.setPosition(mainCharacter.getX(), mainCharacter.getY());
+        sword.moveBy(offset.x * mainCharacter.getWidth(), offset.y * mainCharacter.getHeight());
+
+        float swordArc = 90;
+        sword.setRotation(facingAngle - swordArc / 2);
+        sword.setOriginX(0);
+
+        sword.setVisible(true);
+        sword.addAction(Actions.rotateBy(swordArc, 0.25f));
+        sword.addAction(Actions.after(Actions.visible(false)));
+
+        if (facingAngle == 90 || facingAngle == 180)
+            mainCharacter.toFront();
+        else
+            sword.toFront();
+    }
+
+    public void shootArrow() {
+        if (arrows <= 0)
+            return;
+
+        arrows--;
+
+        Arrow arrow = new Arrow(0, 0, mainStage);
+        arrow.centerAtActor(mainCharacter);
+        arrow.setRotation(mainCharacter.getFacingAngle());
+        arrow.setMotionAngle(mainCharacter.getFacingAngle());
     }
 
     private void generateMaze() {
@@ -273,15 +398,6 @@ public class LevelScreen2 extends BaseScreen {
             int temp = array[index];
             array[index] = array[i];
             array[i] = temp;
-        }
-    }
-
-    private void removeTreeAt(int gridX, int gridY) {
-        for (BaseActor actor : BaseActor.getList(mainStage, "com.badlogic.savethebill.objects.ChristmasTree")) {
-            if ((int) (actor.getX() / CELL_SIZE) == gridX && (int) (actor.getY() / CELL_SIZE) == gridY) {
-                actor.remove();
-                break;
-            }
         }
     }
 }
