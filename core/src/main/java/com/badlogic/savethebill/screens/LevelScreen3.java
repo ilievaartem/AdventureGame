@@ -1,36 +1,27 @@
 package com.badlogic.savethebill.screens;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Input.Buttons;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.maps.MapObject;
 import com.badlogic.gdx.maps.MapProperties;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.scenes.scene2d.Event;
-import com.badlogic.gdx.scenes.scene2d.InputEvent;
-import com.badlogic.gdx.scenes.scene2d.InputEvent.Type;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
-import com.badlogic.gdx.scenes.scene2d.ui.Button;
-import com.badlogic.gdx.scenes.scene2d.ui.Button.ButtonStyle;
-import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.savethebill.BaseActor;
 import com.badlogic.savethebill.BaseGame;
-import com.badlogic.savethebill.BillGame;
 import com.badlogic.savethebill.characters.Hero;
 import com.badlogic.savethebill.characters.Orc;
 import com.badlogic.savethebill.characters.Zoro;
+import com.badlogic.savethebill.objects.Arrow;
 import com.badlogic.savethebill.objects.Rock;
 import com.badlogic.savethebill.objects.Sign;
 import com.badlogic.savethebill.objects.Sword;
-import com.badlogic.savethebill.objects.Arrow;
+import com.badlogic.savethebill.visualelements.ControlHUD;
 import com.badlogic.savethebill.visualelements.DialogBox;
+import com.badlogic.savethebill.visualelements.InventoryHUD;
 import com.badlogic.savethebill.visualelements.TilemapActor;
 import com.badlogic.savethebill.visualelements.Whirlpool;
 
@@ -42,19 +33,14 @@ public class LevelScreen3 extends BaseScreen {
     private int arrows;
     private boolean win;
     private boolean gameOver;
-    private BaseActor continueMessage;
-    private Label npcLabel;
-    private Label healthLabel;
-    private Label coinLabel;
-    private Label arrowLabel;
     private DialogBox dialogBox;
     private float audioVolume;
     private Sound pickUp;
     private Music instrumental;
     private Music windSurf;
-    private boolean isMuted = false;
-    private static final float INSTRUMENTAL_VOLUME = 0.1f;
-    private static final float WIND_VOLUME = 0.1f;
+    private float timeSinceVictory = 0;
+    private InventoryHUD inventoryHUD;
+    private ControlHUD controlHUD;
     private static final float DROP_VOLUME = 0.1f;
 
     public LevelScreen3() {
@@ -98,89 +84,9 @@ public class LevelScreen3 extends BaseScreen {
 
         win = false;
         gameOver = false;
-        continueMessage = null;
 
-        npcLabel = new Label("Zoro's Left:", BaseGame.labelStyle);
-        npcLabel.setColor(Color.CYAN);
-
-        healthLabel = new Label(" x " + health, BaseGame.labelStyle);
-        healthLabel.setColor(Color.PINK);
-        coinLabel = new Label(" x " + coins, BaseGame.labelStyle);
-        coinLabel.setColor(Color.GOLD);
-        arrowLabel = new Label(" x " + arrows, BaseGame.labelStyle);
-        arrowLabel.setColor(Color.TAN);
-
-        BaseActor healthIcon = new BaseActor(0, 0, uiStage);
-        healthIcon.loadTexture("heart-icon.png");
-        BaseActor coinIcon = new BaseActor(0, 0, uiStage);
-        coinIcon.loadTexture("coin-icon1.png");
-        BaseActor arrowIcon = new BaseActor(0, 0, uiStage);
-        arrowIcon.loadTexture("arrow-icon.png");
-
-        ButtonStyle buttonStyle = new ButtonStyle();
-        Texture buttonTex = new Texture(Gdx.files.internal("undo.png"));
-        TextureRegion buttonRegion = new TextureRegion(buttonTex);
-        buttonStyle.up = new TextureRegionDrawable(buttonRegion);
-
-        Button restartButton = new Button(buttonStyle);
-        restartButton.setColor(Color.CYAN);
-
-        restartButton.addListener(
-            (Event e) ->
-            {
-                if (!(e instanceof InputEvent) ||
-                    !((InputEvent) e).getType().equals(Type.touchDown))
-                    return false;
-
-                instrumental.dispose();
-                windSurf.dispose();
-
-                BillGame.setActiveScreen(new LevelScreen3());
-                return false;
-            }
-        );
-
-        ButtonStyle buttonStyle2 = new ButtonStyle();
-        Texture buttonTex2 = new Texture(Gdx.files.internal("audio.png"));
-        Texture buttonTex2Muted = new Texture(Gdx.files.internal("no-audio.png"));
-        TextureRegion buttonRegion2 = new TextureRegion(buttonTex2);
-        TextureRegion buttonRegion2Muted = new TextureRegion(buttonTex2Muted);
-        buttonStyle2.up = new TextureRegionDrawable(buttonRegion2);
-
-        Button muteButton = new Button(buttonStyle2);
-        muteButton.setColor(Color.CYAN);
-
-        muteButton.addListener(
-            (Event e) ->
-            {
-                if (!isTouchDownEvent(e))
-                    return false;
-
-                isMuted = !isMuted;
-                instrumental.setVolume(isMuted ? 0 : INSTRUMENTAL_VOLUME);
-                windSurf.setVolume(isMuted ? 0 : WIND_VOLUME);
-
-                muteButton.getStyle().up = isMuted
-                    ? new TextureRegionDrawable(buttonRegion2Muted)
-                    : new TextureRegionDrawable(buttonRegion2);
-
-                return true;
-            }
-        );
-
-        uiTable.pad(10);
-        uiTable.add(npcLabel).top();
-        uiTable.add(healthIcon);
-        uiTable.add(healthLabel);
-        uiTable.add().expandX();
-        uiTable.add(coinIcon);
-        uiTable.add(coinLabel);
-        uiTable.add().expandX();
-        uiTable.add(arrowIcon);
-        uiTable.add(arrowLabel);
-        uiTable.add().expandX();
-        uiTable.add(muteButton).top();
-        uiTable.add(restartButton).top();
+        inventoryHUD = new InventoryHUD(uiStage, health, coins, arrows);
+        controlHUD = new ControlHUD(uiStage, LevelScreen3.class, true);
 
         dialogBox = new DialogBox(0, 0, uiStage);
         dialogBox.setBackgroundColor(Color.TAN);
@@ -199,19 +105,16 @@ public class LevelScreen3 extends BaseScreen {
 
         audioVolume = 1.00f;
         instrumental.setLooping(true);
-        instrumental.setVolume(INSTRUMENTAL_VOLUME);
+        instrumental.setVolume(controlHUD.getInstrumentalVolume());
         instrumental.play();
         windSurf.setLooping(true);
-        windSurf.setVolume(WIND_VOLUME);
+        windSurf.setVolume(controlHUD.getWindVolume());
         windSurf.play();
     }
 
     public void update(float dt) {
-        healthLabel.setText(" x " + health);
-        coinLabel.setText(" x " + coins);
-        arrowLabel.setText(" x " + arrows);
+        inventoryHUD.update(health, coins, arrows);
 
-        // Додаємо рух персонажа, якщо не переможено, не програно і меч не активний
         if (!win && !gameOver && !sword.isVisible()) {
             if (Gdx.input.isKeyPressed(Keys.W))
                 mainCharacter.accelerateAtAngle(90);
@@ -307,7 +210,8 @@ public class LevelScreen3 extends BaseScreen {
             }
         }
 
-        npcLabel.setText("Zoro's Left: " + BaseActor.count(mainStage, "com.badlogic.savethebill.characters.Zoro"));
+        // Оновлюємо кількість зоро через ControlHUD
+        controlHUD.updateNpcLabel(BaseActor.count(mainStage, "com.badlogic.savethebill.characters.Zoro"));
 
         for (BaseActor signActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.objects.Sign")) {
             Sign sign = (Sign) signActor;
@@ -335,7 +239,7 @@ public class LevelScreen3 extends BaseScreen {
 
                     BaseActor gameOverMessage = new BaseActor(0, 0, mainStage);
                     gameOverMessage.loadTexture("game-over.png");
-                    gameOverMessage.centerAtPosition(mainViewport.getWorldWidth() / 2, mainViewport.getWorldHeight() / 2);
+                    gameOverMessage.centerAtPosition(mainStage.getCamera().position.x, mainStage.getCamera().position.y);
                     gameOverMessage.setOpacity(0);
                     gameOverMessage.addAction(Actions.fadeIn(1));
                 } else {
@@ -352,24 +256,21 @@ public class LevelScreen3 extends BaseScreen {
 
         if (BaseActor.count(mainStage, "com.badlogic.savethebill.characters.Zoro") == 0 && !win) {
             win = true;
+            mainCharacter.setSpeed(0);
             BaseActor youWinMessage = new BaseActor(0, 0, mainStage);
             youWinMessage.loadTexture("you-win.png");
-            youWinMessage.centerAtPosition(mainViewport.getWorldWidth() / 2, mainViewport.getWorldHeight() / 2);
+            youWinMessage.centerAtPosition(mainStage.getCamera().position.x, mainStage.getCamera().position.y);
             youWinMessage.setOpacity(0);
-            youWinMessage.addAction(Actions.delay(1));
-            youWinMessage.addAction(Actions.after(Actions.fadeIn(1)));
-
-            continueMessage = new BaseActor(0, 0, mainStage);
-            continueMessage.loadTexture("message-continue.png");
-            continueMessage.centerAtPosition(mainViewport.getWorldWidth() / 2, mainViewport.getWorldHeight() / 2 - 100);
-            continueMessage.addAction(Actions.delay(2));
-            continueMessage.addAction(Actions.after(Actions.fadeIn(1)));
+            youWinMessage.addAction(Actions.fadeIn(1));
         }
 
-        if (win && Gdx.input.isKeyPressed(Input.Keys.C)) {
-            instrumental.stop();
-            windSurf.stop();
-            BaseGame.setActiveScreen(new LevelScreen2(health, coins, arrows));
+        if (win) {
+            timeSinceVictory += dt;
+            if (timeSinceVictory >= 2.0f) {
+                instrumental.stop();
+                windSurf.stop();
+                BaseGame.setActiveScreen(new MenuScreen());
+            }
         }
     }
 

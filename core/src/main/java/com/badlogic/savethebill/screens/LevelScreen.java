@@ -1,8 +1,9 @@
 package com.badlogic.savethebill.screens;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.Input.Buttons;
+import com.badlogic.gdx.Input.Keys;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.maps.MapObject;
 import com.badlogic.gdx.maps.MapProperties;
@@ -11,17 +12,19 @@ import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.savethebill.BaseActor;
 import com.badlogic.savethebill.BaseGame;
-import com.badlogic.savethebill.objects.Solid;
+import com.badlogic.savethebill.characters.Flyer;
 import com.badlogic.savethebill.characters.Hero;
 import com.badlogic.savethebill.characters.NPC;
 import com.badlogic.savethebill.objects.Arrow;
 import com.badlogic.savethebill.objects.Bush;
 import com.badlogic.savethebill.objects.Coin;
-import com.badlogic.savethebill.characters.Flyer;
 import com.badlogic.savethebill.objects.SmallRock;
+import com.badlogic.savethebill.objects.Solid;
 import com.badlogic.savethebill.objects.Sword;
 import com.badlogic.savethebill.objects.Treasure;
+import com.badlogic.savethebill.visualelements.ControlHUD;
 import com.badlogic.savethebill.visualelements.DialogBox;
+import com.badlogic.savethebill.visualelements.InventoryHUD;
 import com.badlogic.savethebill.visualelements.ShopArrow;
 import com.badlogic.savethebill.visualelements.ShopHeart;
 import com.badlogic.savethebill.visualelements.Smoke;
@@ -35,9 +38,6 @@ public class LevelScreen extends BaseScreen {
     int coins;
     int arrows;
     boolean gameOver;
-    Label healthLabel;
-    Label coinLabel;
-    Label arrowLabel;
     Label messageLabel;
     DialogBox dialogBox;
 
@@ -49,6 +49,23 @@ public class LevelScreen extends BaseScreen {
     private float timeSinceVictory = 0;
     private boolean victoryAchieved = false;
     private boolean allFlyersDefeated = false;
+    private InventoryHUD inventoryHUD;
+    private ControlHUD controlHUD;
+    private Sound flyerDeath;
+    private Sound coinPickup;
+    private Sound itemPurchase;
+
+    public LevelScreen() {
+        this.health = 3;
+        this.coins = 5;
+        this.arrows = 3;
+    }
+
+    public LevelScreen(int health, int coins, int arrows) {
+        this.health = health;
+        this.coins = coins;
+        this.arrows = arrows;
+    }
 
     public void initialize() {
         Gdx.graphics.setFullscreenMode(Gdx.graphics.getDisplayMode());
@@ -88,17 +105,11 @@ public class LevelScreen extends BaseScreen {
         MapProperties treasureProps = treasureTile.getProperties();
         treasure = new Treasure((float) treasureProps.get("x"), (float) treasureProps.get("y"), mainStage);
 
-        health = 3;
-        coins = 5;
-        arrows = 3;
         gameOver = false;
 
-        healthLabel = new Label(" x " + health, BaseGame.labelStyle);
-        healthLabel.setColor(Color.PINK);
-        coinLabel = new Label(" x " + coins, BaseGame.labelStyle);
-        coinLabel.setColor(Color.GOLD);
-        arrowLabel = new Label(" x " + arrows, BaseGame.labelStyle);
-        arrowLabel.setColor(Color.TAN);
+        inventoryHUD = new InventoryHUD(uiStage, health, coins, arrows);
+        controlHUD = new ControlHUD(uiStage, LevelScreen.class);
+
         messageLabel = new Label("...", BaseGame.labelStyle);
         messageLabel.setVisible(false);
 
@@ -110,23 +121,7 @@ public class LevelScreen extends BaseScreen {
         dialogBox.alignCenter();
         dialogBox.setVisible(false);
 
-        BaseActor healthIcon = new BaseActor(0, 0, uiStage);
-        healthIcon.loadTexture("heart-icon.png");
-        BaseActor coinIcon = new BaseActor(0, 0, uiStage);
-        coinIcon.loadTexture("coin-icon1.png");
-        BaseActor arrowIcon = new BaseActor(0, 0, uiStage);
-        arrowIcon.loadTexture("arrow-icon.png");
-
         uiTable.pad(20);
-        uiTable.add(healthIcon);
-        uiTable.add(healthLabel);
-        uiTable.add().expandX();
-        uiTable.add(coinIcon);
-        uiTable.add(coinLabel);
-        uiTable.add().expandX();
-        uiTable.add(arrowIcon);
-        uiTable.add(arrowLabel);
-        uiTable.row();
         uiTable.add(messageLabel).colspan(8).expandX().expandY();
         uiTable.row();
         uiTable.add(dialogBox).colspan(8);
@@ -152,12 +147,16 @@ public class LevelScreen extends BaseScreen {
         shopArrow = new ShopArrow((float) shopArrowProps.get("x"), (float) shopArrowProps.get("y"), mainStage);
 
         hero.toFront();
+
+        flyerDeath = Gdx.audio.newSound(Gdx.files.internal("Flyer_Death.ogg"));
+        coinPickup = Gdx.audio.newSound(Gdx.files.internal("Ring_Inventory.ogg"));
+        itemPurchase = Gdx.audio.newSound(Gdx.files.internal("Sell_Buy_Item.ogg"));
+
+        controlHUD.initializeLevelMusic("Music_Peaceful_Village.ogg");
     }
 
     public void update(float dt) {
-        healthLabel.setText(" x " + health);
-        coinLabel.setText(" x " + coins);
-        arrowLabel.setText(" x " + arrows);
+        inventoryHUD.update(health, coins, arrows);
 
         if (!gameOver) {
             if (!sword.isVisible()) {
@@ -209,6 +208,9 @@ public class LevelScreen extends BaseScreen {
                         coin.centerAtActor(flyer);
                         Smoke smoke = new Smoke(0, 0, mainStage);
                         smoke.centerAtActor(flyer);
+                        if (!controlHUD.isMuted()) {
+                            flyerDeath.play(controlHUD.getEffectVolume());
+                        }
                     }
                 }
             }
@@ -217,6 +219,9 @@ public class LevelScreen extends BaseScreen {
                 if (hero.overlaps(coin)) {
                     coin.remove();
                     coins++;
+                    if (!controlHUD.isMuted()) {
+                        coinPickup.play(controlHUD.getEffectVolume());
+                    }
                 }
             }
 
@@ -301,6 +306,9 @@ public class LevelScreen extends BaseScreen {
                         coin.centerAtActor(flyer);
                         Smoke smoke = new Smoke(0, 0, mainStage);
                         smoke.centerAtActor(flyer);
+                        if (!controlHUD.isMuted()) {
+                            flyerDeath.play(controlHUD.getEffectVolume());
+                        }
                     }
                 }
 
@@ -318,6 +326,7 @@ public class LevelScreen extends BaseScreen {
         if (victoryAchieved) {
             timeSinceVictory += dt;
             if (timeSinceVictory >= 2.0f) {
+                controlHUD.dispose();
                 BaseGame.setActiveScreen(new LevelScreen2(health, coins, arrows));
             }
         }
@@ -386,17 +395,34 @@ public class LevelScreen extends BaseScreen {
         }
 
         if (keycode == Keys.E) {
+            boolean purchased = false;
             if (hero.overlaps(shopHeart) && coins >= 3) {
                 coins -= 3;
                 health += 1;
+                purchased = true;
             }
 
             if (hero.overlaps(shopArrow) && coins >= 4) {
                 coins -= 4;
                 arrows += 3;
+                purchased = true;
             }
+
+            if (purchased && !controlHUD.isMuted()) {
+                itemPurchase.play(controlHUD.getEffectVolume());
+            }
+
             return true;
         }
         return false;
+    }
+
+    @Override
+    public void dispose() {
+        super.dispose();
+        controlHUD.dispose();
+        flyerDeath.dispose();
+        coinPickup.dispose();
+        itemPurchase.dispose();
     }
 }
