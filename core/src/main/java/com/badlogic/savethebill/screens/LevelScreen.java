@@ -5,6 +5,8 @@ import com.badlogic.gdx.Input.Buttons;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.g2d.Animation;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.maps.MapObject;
 import com.badlogic.gdx.maps.MapProperties;
 import com.badlogic.gdx.math.Vector2;
@@ -46,9 +48,7 @@ public class LevelScreen extends BaseScreen {
     ShopArrow shopArrow;
 
     private boolean isFullscreen = true;
-    private float timeSinceVictory = 0;
-    private boolean victoryAchieved = false;
-    private boolean allFlyersDefeated = false;
+    private boolean treasureOpened = false;
     private InventoryHUD inventoryHUD;
     private ControlHUD controlHUD;
     private Sound flyerDeath;
@@ -108,7 +108,7 @@ public class LevelScreen extends BaseScreen {
         gameOver = false;
 
         inventoryHUD = new InventoryHUD(uiStage, health, coins, arrows);
-        controlHUD = new ControlHUD(uiStage, LevelScreen.class);
+        controlHUD = new ControlHUD(uiStage, LevelScreen.class, this);
 
         messageLabel = new Label("...", BaseGame.labelStyle);
         messageLabel.setVisible(false);
@@ -273,19 +273,29 @@ public class LevelScreen extends BaseScreen {
                 }
             }
 
-            int flyerCount = BaseActor.count(mainStage, "com.badlogic.savethebill.characters.Flyer");
-            if (flyerCount == 0 && !allFlyersDefeated) {
-                allFlyersDefeated = true;
+            if (!treasureOpened && hero.overlaps(treasure)) {
+                Animation<TextureRegion> openAnimation = treasure.loadTexture("open-treasure-chest.png");
+                treasure.setAnimation(openAnimation);
+                float originalWidth = treasure.getWidth();
+                float originalHeight = treasure.getHeight();
+                float originalX = treasure.getX();
+                float originalY = treasure.getY();
+                treasure.setSize(originalWidth, originalHeight);
+                treasure.setPosition(originalX, originalY);
+                // Додавання бонусів
+                health += 1;
+                coins += 5;
+                arrows += 3;
+                treasureOpened = true;
+                if (!controlHUD.isMuted()) {
+                    coinPickup.play(controlHUD.getEffectVolume());
+                }
             }
 
-            if (allFlyersDefeated && hero.overlaps(treasure) && !victoryAchieved) {
-                messageLabel.setText("You can go farther...");
-                messageLabel.setColor(Color.LIME);
-                messageLabel.setFontScale(2);
-                messageLabel.setVisible(true);
-                victoryAchieved = true;
-                gameOver = true;
-                treasure.remove();
+            // Перехід на LevelScreen2 тільки після відкриття скрині
+            if (treasureOpened && hero.getY() <= 0) {
+                controlHUD.dispose();
+                BaseGame.setActiveScreen(new LevelScreen2(health, coins, arrows));
             }
 
             if (health <= 0) {
@@ -320,14 +330,6 @@ public class LevelScreen extends BaseScreen {
                         arrow.addAction(Actions.after(Actions.removeActor()));
                     }
                 }
-            }
-        }
-
-        if (victoryAchieved) {
-            timeSinceVictory += dt;
-            if (timeSinceVictory >= 2.0f) {
-                controlHUD.dispose();
-                BaseGame.setActiveScreen(new LevelScreen2(health, coins, arrows));
             }
         }
     }
@@ -421,8 +423,17 @@ public class LevelScreen extends BaseScreen {
     public void dispose() {
         super.dispose();
         controlHUD.dispose();
-        flyerDeath.dispose();
-        coinPickup.dispose();
-        itemPurchase.dispose();
+        if (flyerDeath != null) {
+            flyerDeath.dispose();
+        }
+        if (coinPickup != null) {
+            coinPickup.dispose();
+        }
+        if (itemPurchase != null) {
+            itemPurchase.dispose();
+        }
+    }
+
+    public void updateSoundsMuteState() {
     }
 }

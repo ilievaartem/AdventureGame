@@ -86,7 +86,7 @@ public class LevelScreen3 extends BaseScreen {
         gameOver = false;
 
         inventoryHUD = new InventoryHUD(uiStage, health, coins, arrows);
-        controlHUD = new ControlHUD(uiStage, LevelScreen3.class, true);
+        controlHUD = new ControlHUD(uiStage, LevelScreen3.class, this, true);
 
         dialogBox = new DialogBox(0, 0, uiStage);
         dialogBox.setBackgroundColor(Color.TAN);
@@ -319,5 +319,30 @@ public class LevelScreen3 extends BaseScreen {
         arrow.centerAtActor(mainCharacter);
         arrow.setRotation(mainCharacter.getFacingAngle());
         arrow.setMotionAngle(mainCharacter.getFacingAngle());
+    }
+
+    @Override
+    public void dispose() {
+        super.dispose();
+        if (pickUp != null) {
+            pickUp.dispose();
+        }
+        if (instrumental != null) {
+            instrumental.stop();
+            instrumental.dispose();
+        }
+        if (windSurf != null) {
+            windSurf.stop();
+            windSurf.dispose();
+        }
+    }
+
+    public void updateSoundsMuteState() {
+        if (instrumental != null) {
+            instrumental.setVolume(controlHUD.getInstrumentalVolume());
+        }
+        if (windSurf != null) {
+            windSurf.setVolume(controlHUD.getWindVolume());
+        }
     }
 }

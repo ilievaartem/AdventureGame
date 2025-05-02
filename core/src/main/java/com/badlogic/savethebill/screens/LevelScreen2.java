@@ -93,7 +93,7 @@ public class LevelScreen2 extends BaseScreen {
         youWinMessage = null;
 
         inventoryHUD = new InventoryHUD(uiStage, health, coins, arrows);
-        controlHUD = new ControlHUD(uiStage, LevelScreen2.class);
+        controlHUD = new ControlHUD(uiStage, LevelScreen2.class, this);
 
         instrumental = Gdx.audio.newMusic(Gdx.files.internal("Birds_Wind_Synth.ogg"));
         windSurf = Gdx.audio.newMusic(Gdx.files.internal("Scary_Сrow_Сaw.ogg"));
@@ -128,8 +128,14 @@ public class LevelScreen2 extends BaseScreen {
         super.dispose();
         shapeRenderer.dispose();
         batch.dispose();
-        instrumental.dispose();
-        windSurf.dispose();
+        if (instrumental != null) {
+            instrumental.stop();
+            instrumental.dispose();
+        }
+        if (windSurf != null) {
+            windSurf.stop();
+            windSurf.dispose();
+        }
     }
 
     public void update(float dt) {
@@ -306,6 +312,15 @@ public class LevelScreen2 extends BaseScreen {
             int temp = array[index];
             array[index] = array[i];
             array[i] = temp;
+        }
+    }
+
+    public void updateSoundsMuteState() {
+        if (instrumental != null) {
+            instrumental.setVolume(controlHUD.getInstrumentalVolume());
+        }
+        if (windSurf != null) {
+            windSurf.setVolume(controlHUD.getWindVolume());
         }
     }
 }

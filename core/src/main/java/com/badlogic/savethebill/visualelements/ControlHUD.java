@@ -16,6 +16,9 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.savethebill.BaseGame;
 import com.badlogic.savethebill.BillGame;
 import com.badlogic.savethebill.screens.BaseScreen;
+import com.badlogic.savethebill.screens.LevelScreen;
+import com.badlogic.savethebill.screens.LevelScreen2;
+import com.badlogic.savethebill.screens.LevelScreen3;
 
 public class ControlHUD {
     private Table uiTable;
@@ -29,13 +32,15 @@ public class ControlHUD {
     private static final float LEVEL_MUSIC_VOLUME = 0.1f;
     private static final float EFFECT_VOLUME = 0.1f;
     private Stage uiStage;
+    private BaseScreen currentScreen;
 
-    public ControlHUD(Stage uiStage, Class<? extends BaseScreen> screenClass) {
-        this(uiStage, screenClass, false);
+    public ControlHUD(Stage uiStage, Class<? extends BaseScreen> screenClass, BaseScreen currentScreen) {
+        this(uiStage, screenClass, currentScreen, false);
     }
 
-    public ControlHUD(Stage uiStage, Class<? extends BaseScreen> screenClass, boolean showNpcLabel) {
+    public ControlHUD(Stage uiStage, Class<? extends BaseScreen> screenClass, BaseScreen currentScreen, boolean showNpcLabel) {
         this.uiStage = uiStage;
+        this.currentScreen = currentScreen;
         uiTable = new Table();
         uiTable.setFillParent(true);
         uiTable.top();
@@ -55,6 +60,11 @@ public class ControlHUD {
                 if (!(e instanceof InputEvent) ||
                     !((InputEvent) e).getType().equals(InputEvent.Type.touchDown))
                     return false;
+
+                dispose();
+                if (currentScreen != null) {
+                    currentScreen.dispose();
+                }
 
                 try {
                     BaseScreen newScreen = screenClass.getConstructor().newInstance();
@@ -92,6 +102,8 @@ public class ControlHUD {
                     levelMusic.setVolume(isMuted ? 0 : LEVEL_MUSIC_VOLUME);
                 }
 
+                notifyMuteStateChanged();
+
                 return true;
             }
         );
@@ -120,6 +132,7 @@ public class ControlHUD {
         if (levelMusic != null) {
             levelMusic.stop();
             levelMusic.dispose();
+            levelMusic = null;
         }
     }
 
@@ -151,5 +164,17 @@ public class ControlHUD {
 
     public boolean isMuted() {
         return isMuted;
+    }
+
+    private void notifyMuteStateChanged() {
+        if (currentScreen != null) {
+            if (currentScreen instanceof LevelScreen) {
+                ((LevelScreen) currentScreen).updateSoundsMuteState();
+            } else if (currentScreen instanceof LevelScreen2) {
+                ((LevelScreen2) currentScreen).updateSoundsMuteState();
+            } else if (currentScreen instanceof LevelScreen3) {
+                ((LevelScreen3) currentScreen).updateSoundsMuteState();
+            }
+        }
     }
 }
