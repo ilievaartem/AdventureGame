@@ -42,6 +42,8 @@ public class LevelScreen extends BaseScreen {
     boolean gameOver;
     Label messageLabel;
     DialogBox dialogBox;
+    BaseActor keyEIcon;
+    boolean isNearShopItem;
 
     Treasure treasure;
     ShopHeart shopHeart;
@@ -54,6 +56,7 @@ public class LevelScreen extends BaseScreen {
     private Sound flyerDeath;
     private Sound coinPickup;
     private Sound itemPurchase;
+    private Sound damageSound;
 
     public LevelScreen() {
         this.health = 3;
@@ -121,10 +124,18 @@ public class LevelScreen extends BaseScreen {
         dialogBox.alignCenter();
         dialogBox.setVisible(false);
 
+        keyEIcon = new BaseActor(0, 0, uiStage);
+        keyEIcon.loadTexture("key-E.png");
+        keyEIcon.setSize(32, 32);
+        keyEIcon.setVisible(false);
+
+        dialogBox.addActor(keyEIcon);
+        keyEIcon.setPosition(dialogBox.getWidth() - keyEIcon.getWidth(), 0);
+
         uiTable.pad(20);
         uiTable.add(messageLabel).colspan(8).expandX().expandY();
         uiTable.row();
-        uiTable.add(dialogBox).colspan(8);
+        uiTable.add(dialogBox).expandX().bottom().padBottom(60);
 
         for (MapObject obj : tma.getTileList("Flyer")) {
             MapProperties props = obj.getProperties();
@@ -151,6 +162,7 @@ public class LevelScreen extends BaseScreen {
         flyerDeath = Gdx.audio.newSound(Gdx.files.internal("Flyer_Death.ogg"));
         coinPickup = Gdx.audio.newSound(Gdx.files.internal("Ring_Inventory.ogg"));
         itemPurchase = Gdx.audio.newSound(Gdx.files.internal("Sell_Buy_Item.ogg"));
+        damageSound = Gdx.audio.newSound(Gdx.files.internal("Damage_Character.ogg"));
 
         controlHUD.initializeLevelMusic("Music_Peaceful_Village.ogg");
     }
@@ -235,7 +247,30 @@ public class LevelScreen extends BaseScreen {
                     hero.setMotionAngle(hitVector.angle());
                     hero.setSpeed(100);
                     health--;
+                    hero.clearActions();
+                    hero.addAction(Actions.sequence(
+                        Actions.color(Color.RED, 0.2f),
+                        Actions.color(Color.WHITE, 0.2f)
+                    ));
+                    if (!controlHUD.isMuted()) {
+                        damageSound.play(controlHUD.getEffectVolume());
+                    }
                 }
+            }
+
+            boolean nearShopHeart = hero.isWithinDistance(4, shopHeart);
+            boolean nearShopArrow = hero.isWithinDistance(4, shopArrow);
+            if ((nearShopHeart || nearShopArrow) && !isNearShopItem) {
+                dialogBox.setBackgroundColor(Color.TAN);
+                dialogBox.setText("To buy item, press E");
+                dialogBox.setVisible(true);
+                keyEIcon.setVisible(true);
+                isNearShopItem = true;
+            } else if (!(nearShopHeart || nearShopArrow) && isNearShopItem) {
+                dialogBox.setText(" ");
+                dialogBox.setVisible(false);
+                keyEIcon.setVisible(false);
+                isNearShopItem = false;
             }
 
             for (BaseActor npcActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.characters.NPC")) {
@@ -244,7 +279,7 @@ public class LevelScreen extends BaseScreen {
                 hero.preventOverlap(npc);
                 boolean nearby = hero.isWithinDistance(4, npc);
 
-                if (nearby && !npc.isViewing()) {
+                if (nearby && !npc.isViewing() && !isNearShopItem) {
                     if (npc.getID().equals("Gatekeeper")) {
                         int flyerCount = BaseActor.count(mainStage, "com.badlogic.savethebill.characters.Flyer");
                         String message = "Destroy the flyers and you can have the treasure. ";
@@ -257,7 +292,6 @@ public class LevelScreen extends BaseScreen {
                             npc.addAction(Actions.fadeOut(5.0f));
                             npc.addAction(Actions.after(Actions.moveBy(-10000, -10000)));
                         }
-
                         dialogBox.setText(message);
                     } else {
                         dialogBox.setText(npc.getText());
@@ -282,7 +316,6 @@ public class LevelScreen extends BaseScreen {
                 float originalY = treasure.getY();
                 treasure.setSize(originalWidth, originalHeight);
                 treasure.setPosition(originalX, originalY);
-                // Додавання бонусів
                 health += 1;
                 coins += 5;
                 arrows += 3;
@@ -292,7 +325,6 @@ public class LevelScreen extends BaseScreen {
                 }
             }
 
-            // Перехід на LevelScreen2 тільки після відкриття скрині
             if (treasureOpened && hero.getY() <= 0) {
                 controlHUD.dispose();
                 BaseGame.setActiveScreen(new LevelScreen2(health, coins, arrows));
@@ -431,6 +463,9 @@ public class LevelScreen extends BaseScreen {
         }
         if (itemPurchase != null) {
             itemPurchase.dispose();
+        }
+        if (damageSound != null) {
+            damageSound.dispose();
         }
     }
 

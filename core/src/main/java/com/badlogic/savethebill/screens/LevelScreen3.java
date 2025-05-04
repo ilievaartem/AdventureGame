@@ -36,6 +36,7 @@ public class LevelScreen3 extends BaseScreen {
     private DialogBox dialogBox;
     private float audioVolume;
     private Sound pickUp;
+    private Sound damageSound;
     private Music instrumental;
     private Music windSurf;
     private float timeSinceVictory = 0;
@@ -100,6 +101,7 @@ public class LevelScreen3 extends BaseScreen {
         uiTable.add(dialogBox).colspan(8);
 
         pickUp = Gdx.audio.newSound(Gdx.files.internal("Power_Drain.ogg"));
+        damageSound = Gdx.audio.newSound(Gdx.files.internal("Damage_Character.ogg"));
         instrumental = Gdx.audio.newMusic(Gdx.files.internal("Master_of_the_Feast.ogg"));
         windSurf = Gdx.audio.newMusic(Gdx.files.internal("Birds_Wind.ogg"));
 
@@ -210,7 +212,6 @@ public class LevelScreen3 extends BaseScreen {
             }
         }
 
-        // Оновлюємо кількість зоро через ControlHUD
         controlHUD.updateNpcLabel(BaseActor.count(mainStage, "com.badlogic.savethebill.characters.Zoro"));
 
         for (BaseActor signActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.objects.Sign")) {
@@ -233,6 +234,14 @@ public class LevelScreen3 extends BaseScreen {
             Orc orc = (Orc) orcActor;
             if (mainCharacter.overlaps(orc) && !gameOver && !win) {
                 health--;
+                mainCharacter.clearActions();
+                mainCharacter.addAction(Actions.sequence(
+                    Actions.color(Color.RED, 0.2f),
+                    Actions.color(Color.WHITE, 0.2f)
+                ));
+                if (!controlHUD.isMuted()) {
+                    damageSound.play(controlHUD.getEffectVolume());
+                }
                 if (health <= 0) {
                     gameOver = true;
                     mainCharacter.remove();
@@ -326,6 +335,9 @@ public class LevelScreen3 extends BaseScreen {
         super.dispose();
         if (pickUp != null) {
             pickUp.dispose();
+        }
+        if (damageSound != null) {
+            damageSound.dispose();
         }
         if (instrumental != null) {
             instrumental.stop();

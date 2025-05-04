@@ -42,13 +42,14 @@ public class BaseActor extends Group {
         super();
 
         setPosition(x, y);
-        s.addActor(this);
+        if (s != null) {
+            s.addActor(this);
+        }
 
         animation = null;
         elapsedTime = 0;
         animationPaused = false;
 
-        // initialize physics data
         velocityVec = new Vector2(0, 0);
         accelerationVec = new Vector2(0, 0);
         acceleration = 0;
@@ -299,8 +300,12 @@ public class BaseActor extends Group {
     }
 
     public void alignCamera() {
-        Camera cam = this.getStage().getCamera();
-        Viewport v = this.getStage().getViewport();
+        Stage stage = this.getStage();
+        if (stage == null) {
+            return; // Skip if stage is null to prevent NullPointerException
+        }
+        Camera cam = stage.getCamera();
+        Viewport v = stage.getViewport();
 
         cam.position.set(this.getX() + this.getOriginX(), this.getY() + this.getOriginY(), 0);
 
@@ -339,7 +344,6 @@ public class BaseActor extends Group {
     }
 
     public void draw(Batch batch, float parentAlpha) {
-
         Color c = getColor();
         batch.setColor(c.r, c.g, c.b, c.a);
 
@@ -362,19 +366,18 @@ public class BaseActor extends Group {
         setOrigin(getWidth() / 2, getHeight() / 2);
     }
 
-    public boolean isWithinDistance(float distance, BaseActor other)
-    { Polygon poly1 = this.getBoundaryPolygon();
+    public boolean isWithinDistance(float distance, BaseActor other) {
+        Polygon poly1 = this.getBoundaryPolygon();
         float scaleX = (this.getWidth() + 2 * distance) / this.getWidth();
         float scaleY = (this.getHeight() + 2 * distance) / this.getHeight();
         poly1.setScale(scaleX, scaleY);
         Polygon poly2 = other.getBoundaryPolygon();
-        if ( !poly1.getBoundingRectangle().overlaps(poly2.getBoundingRectangle()) )
+        if (!poly1.getBoundingRectangle().overlaps(poly2.getBoundingRectangle()))
             return false;
-        return Intersector.overlapConvexPolygons( poly1, poly2 );
+        return Intersector.overlapConvexPolygons(poly1, poly2);
     }
 
-    public static Rectangle getWorldBounds()
-    {
+    public static Rectangle getWorldBounds() {
         return worldBounds;
     }
 }
