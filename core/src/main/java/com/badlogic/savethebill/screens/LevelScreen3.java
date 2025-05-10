@@ -48,6 +48,8 @@ public class LevelScreen3 extends BaseScreen {
     private InventoryHUD inventoryHUD;
     private ControlHUD controlHUD;
     private static final float DROP_VOLUME = 0.1f;
+    private static final float ORC_DAMAGE_COOLDOWN = 1.0f;
+    private float orcDamageTimer;
 
     public LevelScreen3() {
         this(3, 5, 3);
@@ -57,10 +59,14 @@ public class LevelScreen3 extends BaseScreen {
         this.health = health;
         this.coins = coins;
         this.arrows = arrows;
+        this.orcDamageTimer = 0f;
     }
 
     public void initialize() {
         TilemapActor tma = new TilemapActor("map.tmx", mainStage);
+
+        inventoryHUD = new InventoryHUD(uiStage, health, coins, arrows);
+        controlHUD = new ControlHUD(uiStage, LevelScreen3.class, this, true);
 
         for (MapObject obj : tma.getTileList("Zoro")) {
             MapProperties props = obj.getProperties();
@@ -86,33 +92,29 @@ public class LevelScreen3 extends BaseScreen {
             }
         }
 
+        MapObject startPoint = tma.getRectangleList("Start").get(0);
+        MapProperties props = startPoint.getProperties();
+        mainCharacter = new Hero((float) props.get("x"), (float) props.get("y"), mainStage);
+
         for (MapObject obj : tma.getTileList("Orc")) {
-            MapProperties props = obj.getProperties();
-            new Orc((float) props.get("x"), (float) props.get("y"), mainStage);
+            props = obj.getProperties();
+            new Orc((float) props.get("x"), (float) props.get("y"), mainStage, mainCharacter, controlHUD);
         }
         for (MapObject obj : tma.getTileList("Rock")) {
-            MapProperties props = obj.getProperties();
+            props = obj.getProperties();
             new Rock((float) props.get("x"), (float) props.get("y"), mainStage);
         }
         for (MapObject obj : tma.getTileList("Sign")) {
-            MapProperties props = obj.getProperties();
+            props = obj.getProperties();
             Sign s = new Sign((float) props.get("x"), (float) props.get("y"), mainStage);
             s.setText((String) props.get("message"));
         }
-
-        MapObject startPoint = tma.getRectangleList("Start").get(0);
-        MapProperties props = startPoint.getProperties();
-
-        mainCharacter = new Hero((float) props.get("x"), (float) props.get("y"), mainStage);
 
         sword = new Sword(0, 0, mainStage);
         sword.setVisible(false);
 
         win = false;
         gameOver = false;
-
-        inventoryHUD = new InventoryHUD(uiStage, health, coins, arrows);
-        controlHUD = new ControlHUD(uiStage, LevelScreen3.class, this, true);
 
         dialogBox = new DialogBox(0, 0, uiStage);
         dialogBox.setBackgroundColor(Color.TAN);
@@ -141,6 +143,7 @@ public class LevelScreen3 extends BaseScreen {
 
     public void update(float dt) {
         inventoryHUD.update(health, coins, arrows);
+        orcDamageTimer += dt;
 
         if (!win && !gameOver && !sword.isVisible()) {
             if (Gdx.input.isKeyPressed(Keys.W))
@@ -194,7 +197,7 @@ public class LevelScreen3 extends BaseScreen {
             for (BaseActor orcActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.characters.Orc")) {
                 Orc orc = (Orc) orcActor;
                 if (sword.overlaps(orc)) {
-                    orc.remove();
+                    orc.takeDamage();
                 }
             }
         }
@@ -218,7 +221,7 @@ public class LevelScreen3 extends BaseScreen {
             for (BaseActor orcActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.characters.Orc")) {
                 Orc orc = (Orc) orcActor;
                 if (arrow.overlaps(orc)) {
-                    orc.remove();
+                    orc.takeDamage();
                     arrow.remove();
                 }
             }
@@ -264,8 +267,10 @@ public class LevelScreen3 extends BaseScreen {
 
         for (BaseActor orcActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.characters.Orc")) {
             Orc orc = (Orc) orcActor;
-            if (mainCharacter.overlaps(orc) && !gameOver && !win) {
+            float distanceToHero = orc.distanceTo(mainCharacter);
+            if (orc.isAttacking() && distanceToHero <= orc.getAttackRadius() && !gameOver && !win && orcDamageTimer >= ORC_DAMAGE_COOLDOWN) {
                 health--;
+                orcDamageTimer = 0f;
                 mainCharacter.clearActions();
                 mainCharacter.addAction(Actions.sequence(
                     Actions.color(Color.RED, 0.2f),
@@ -285,7 +290,6 @@ public class LevelScreen3 extends BaseScreen {
                     gameOverMessage.addAction(Actions.fadeIn(1));
                 } else {
                     mainCharacter.preventOverlap(orc);
-                    orc.setMotionAngle(orc.getMotionAngle() + 180);
                     Vector2 heroPosition = new Vector2(mainCharacter.getX(), mainCharacter.getY());
                     Vector2 orcPosition = new Vector2(orc.getX(), orc.getY());
                     Vector2 hitVector = heroPosition.sub(orcPosition);

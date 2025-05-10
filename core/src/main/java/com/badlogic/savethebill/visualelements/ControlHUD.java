@@ -55,10 +55,8 @@ public class ControlHUD {
         restartButton.setColor(Color.CYAN);
 
         restartButton.addListener(
-            (Event e) ->
-            {
-                if (!(e instanceof InputEvent) ||
-                    !((InputEvent) e).getType().equals(InputEvent.Type.touchDown))
+            (Event e) -> {
+                if (!(e instanceof InputEvent) || !((InputEvent) e).getType().equals(InputEvent.Type.touchDown))
                     return false;
 
                 dispose();
@@ -87,10 +85,8 @@ public class ControlHUD {
         muteButton.setColor(Color.CYAN);
 
         muteButton.addListener(
-            (Event e) ->
-            {
-                if (!(e instanceof InputEvent) ||
-                    !((InputEvent) e).getType().equals(InputEvent.Type.touchDown))
+            (Event e) -> {
+                if (!(e instanceof InputEvent) || !((InputEvent) e).getType().equals(InputEvent.Type.touchDown))
                     return false;
 
                 isMuted = !isMuted;

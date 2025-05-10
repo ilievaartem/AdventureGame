@@ -302,7 +302,7 @@ public class BaseActor extends Group {
     public void alignCamera() {
         Stage stage = this.getStage();
         if (stage == null) {
-            return; // Skip if stage is null to prevent NullPointerException
+            return;
         }
         Camera cam = stage.getCamera();
         Viewport v = stage.getViewport();
@@ -379,5 +379,21 @@ public class BaseActor extends Group {
 
     public static Rectangle getWorldBounds() {
         return worldBounds;
+    }
+
+    public float distanceTo(BaseActor other) {
+        float dx = other.getX() - this.getX();
+        float dy = other.getY() - this.getY();
+        return (float) Math.sqrt(dx * dx + dy * dy);
+    }
+
+    public void dispose() {
+        if (animation != null) {
+            for (TextureRegion region : animation.getKeyFrames()) {
+                if (region.getTexture() != null) {
+                    region.getTexture().dispose();
+                }
+            }
+        }
     }
 }
