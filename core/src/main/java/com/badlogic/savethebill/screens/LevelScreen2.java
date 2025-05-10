@@ -38,7 +38,7 @@ public class LevelScreen2 extends BaseScreen {
     private Music instrumental;
     private Music windSurf;
     private Sound damageSound;
-    private Sound spiderDeathSound; // Новий звук для смерті павука
+    private Sound spiderDeathSound;
     private ShapeRenderer shapeRenderer;
     private SpriteBatch batch;
     private float crowSoundTimer = 0;
@@ -231,7 +231,7 @@ public class LevelScreen2 extends BaseScreen {
             if (sword.isVisible() && spider.overlaps(sword)) {
                 new SmallerSmoke(spider.getX(), spider.getY(), mainStage);
                 if (!controlHUD.isMuted()) {
-                    spiderDeathSound.play(controlHUD.getEffectVolume()); // Відтворення звуку
+                    spiderDeathSound.play(controlHUD.getEffectVolume());
                 }
                 spider.remove();
             }
@@ -240,7 +240,7 @@ public class LevelScreen2 extends BaseScreen {
                 if (arrow.overlaps(spider)) {
                     new SmallerSmoke(spider.getX(), spider.getY(), mainStage);
                     if (!controlHUD.isMuted()) {
-                        spiderDeathSound.play(controlHUD.getEffectVolume()); // Відтворення звуку
+                        spiderDeathSound.play(controlHUD.getEffectVolume());
                     }
                     spider.remove();
                     arrow.remove();
@@ -272,9 +272,9 @@ public class LevelScreen2 extends BaseScreen {
             ", exitYPosition + CELL_SIZE=" + (exitYPosition + CELL_SIZE));
 
         if (!win && !gameOver) {
-            if (mainCharacter.getX() + mainCharacter.getWidth() >= mazeRightBoundary &&
-                mainCharacter.getY() >= exitYPosition &&
-                mainCharacter.getY() + mainCharacter.getHeight() <= exitYPosition + CELL_SIZE) {
+            if (mainCharacter.getX() + mainCharacter.getWidth() >= mazeRightBoundary - 10 &&
+                mainCharacter.getY() + mainCharacter.getHeight() >= exitYPosition &&
+                mainCharacter.getY() <= exitYPosition + CELL_SIZE) {
                 win = true;
                 System.out.println("Win condition met! Transitioning to LevelScreen3");
                 instrumental.stop();

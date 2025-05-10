@@ -2,12 +2,10 @@ package com.badlogic.savethebill.characters;
 
 import com.badlogic.gdx.scenes.scene2d.Stage;
 
-public class Zoro extends NPC {
-    public boolean collected;
-
-    public Zoro(float x, float y, Stage s) {
+public class NPCDog extends NPC {
+    public NPCDog(float x, float y, Stage s) {
         super(x, y, s);
-        loadTexture("zoro-1.png");
+        loadTexture("npc-dog.png");
         setBoundaryRectangle();
     }
 }

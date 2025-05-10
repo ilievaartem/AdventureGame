@@ -13,9 +13,14 @@ import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.savethebill.BaseActor;
 import com.badlogic.savethebill.BaseGame;
 import com.badlogic.savethebill.characters.Hero;
+import com.badlogic.savethebill.characters.NPC;
+import com.badlogic.savethebill.characters.NPCDog;
+import com.badlogic.savethebill.characters.NPCHoe;
+import com.badlogic.savethebill.characters.NPCVillager;
 import com.badlogic.savethebill.characters.Orc;
 import com.badlogic.savethebill.characters.Zoro;
 import com.badlogic.savethebill.objects.Arrow;
+import com.badlogic.savethebill.objects.JailBars;
 import com.badlogic.savethebill.objects.Rock;
 import com.badlogic.savethebill.objects.Sign;
 import com.badlogic.savethebill.objects.Sword;
@@ -59,8 +64,28 @@ public class LevelScreen3 extends BaseScreen {
 
         for (MapObject obj : tma.getTileList("Zoro")) {
             MapProperties props = obj.getProperties();
-            new Zoro((float) props.get("x"), (float) props.get("y"), mainStage);
+            float x = (float) props.get("x");
+            float y = (float) props.get("y");
+
+            double random = Math.random();
+            NPC npc;
+            if (random < 0.25) {
+                npc = new Zoro(x, y, mainStage);
+            } else if (random < 0.5) {
+                npc = new NPCVillager(x, y, mainStage);
+            } else if (random < 0.75) {
+                npc = new NPCHoe(x, y, mainStage);
+            } else {
+                npc = new NPCDog(x, y, mainStage);
+            }
+
+            if (Math.random() < 0.3) {
+                JailBars jailBars = new JailBars(x, y, mainStage, npc);
+                jailBars.centerAtActor(npc);
+                jailBars.toFront();
+            }
         }
+
         for (MapObject obj : tma.getTileList("Orc")) {
             MapProperties props = obj.getProperties();
             new Orc((float) props.get("x"), (float) props.get("y"), mainStage);
@@ -145,17 +170,24 @@ public class LevelScreen3 extends BaseScreen {
             mainCharacter.preventOverlap(rockActor);
 
         if (sword.isVisible()) {
-            for (BaseActor zoroActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.characters.Zoro")) {
-                Zoro zoro = (Zoro) zoroActor;
-                if (sword.overlaps(zoro) && !zoro.collected) {
-                    zoro.collected = true;
+            for (BaseActor jailBarsActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.objects.JailBars")) {
+                JailBars jailBars = (JailBars) jailBarsActor;
+                if (sword.overlaps(jailBars)) {
+                    jailBars.hit();
+                }
+            }
+
+            for (BaseActor npcActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.characters.NPC")) {
+                NPC npc = (NPC) npcActor;
+                if (npc.getID() == null && sword.overlaps(npc) && !npc.collected && !isTrapped(npc)) {
+                    npc.collected = true;
                     pickUp.play(DROP_VOLUME * audioVolume);
-                    zoro.clearActions();
-                    zoro.addAction(Actions.fadeOut(1));
-                    zoro.addAction(Actions.after(Actions.removeActor()));
+                    npc.clearActions();
+                    npc.addAction(Actions.fadeOut(1));
+                    npc.addAction(Actions.after(Actions.removeActor()));
 
                     Whirlpool whirl = new Whirlpool(0, 0, mainStage);
-                    whirl.centerAtActor(zoro);
+                    whirl.centerAtActor(npc);
                     whirl.setOpacity(0.25f);
                 }
             }
@@ -168,17 +200,17 @@ public class LevelScreen3 extends BaseScreen {
         }
 
         for (BaseActor arrow : BaseActor.getList(mainStage, "com.badlogic.savethebill.objects.Arrow")) {
-            for (BaseActor zoroActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.characters.Zoro")) {
-                Zoro zoro = (Zoro) zoroActor;
-                if (arrow.overlaps(zoro) && !zoro.collected) {
-                    zoro.collected = true;
+            for (BaseActor npcActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.characters.NPC")) {
+                NPC npc = (NPC) npcActor;
+                if (npc.getID() == null && arrow.overlaps(npc) && !npc.collected && !isTrapped(npc)) {
+                    npc.collected = true;
                     pickUp.play(DROP_VOLUME * audioVolume);
-                    zoro.clearActions();
-                    zoro.addAction(Actions.fadeOut(1));
-                    zoro.addAction(Actions.after(Actions.removeActor()));
+                    npc.clearActions();
+                    npc.addAction(Actions.fadeOut(1));
+                    npc.addAction(Actions.after(Actions.removeActor()));
 
                     Whirlpool whirl = new Whirlpool(0, 0, mainStage);
-                    whirl.centerAtActor(zoro);
+                    whirl.centerAtActor(npc);
                     whirl.setOpacity(0.25f);
                     arrow.remove();
                 }
@@ -197,22 +229,22 @@ public class LevelScreen3 extends BaseScreen {
             }
         }
 
-        for (BaseActor zoroActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.characters.Zoro")) {
-            Zoro zoro = (Zoro) zoroActor;
-            if (mainCharacter.overlaps(zoro) && !zoro.collected) {
-                zoro.collected = true;
+        for (BaseActor npcActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.characters.NPC")) {
+            NPC npc = (NPC) npcActor;
+            if (npc.getID() == null && mainCharacter.overlaps(npc) && !npc.collected && !isTrapped(npc)) {
+                npc.collected = true;
                 pickUp.play(DROP_VOLUME * audioVolume);
-                zoro.clearActions();
-                zoro.addAction(Actions.fadeOut(1));
-                zoro.addAction(Actions.after(Actions.removeActor()));
+                npc.clearActions();
+                npc.addAction(Actions.fadeOut(1));
+                npc.addAction(Actions.after(Actions.removeActor()));
 
                 Whirlpool whirl = new Whirlpool(0, 0, mainStage);
-                whirl.centerAtActor(zoro);
+                whirl.centerAtActor(npc);
                 whirl.setOpacity(0.25f);
             }
         }
 
-        controlHUD.updateNpcLabel(BaseActor.count(mainStage, "com.badlogic.savethebill.characters.Zoro"));
+        controlHUD.updateNpcLabel(BaseActor.count(mainStage, "com.badlogic.savethebill.characters.NPC"));
 
         for (BaseActor signActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.objects.Sign")) {
             Sign sign = (Sign) signActor;
@@ -263,7 +295,7 @@ public class LevelScreen3 extends BaseScreen {
             }
         }
 
-        if (BaseActor.count(mainStage, "com.badlogic.savethebill.characters.Zoro") == 0 && !win) {
+        if (BaseActor.count(mainStage, "com.badlogic.savethebill.characters.NPC") == 0 && !win) {
             win = true;
             mainCharacter.setSpeed(0);
             BaseActor youWinMessage = new BaseActor(0, 0, mainStage);
@@ -271,6 +303,7 @@ public class LevelScreen3 extends BaseScreen {
             youWinMessage.centerAtPosition(mainStage.getCamera().position.x, mainStage.getCamera().position.y);
             youWinMessage.setOpacity(0);
             youWinMessage.addAction(Actions.fadeIn(1));
+            System.out.println("All NPCs collected! Preparing to transition to MenuScreen.");
         }
 
         if (win) {
@@ -279,8 +312,19 @@ public class LevelScreen3 extends BaseScreen {
                 instrumental.stop();
                 windSurf.stop();
                 BaseGame.setActiveScreen(new MenuScreen());
+                System.out.println("Transitioning to MenuScreen after 2 seconds.");
             }
         }
+    }
+
+    private boolean isTrapped(NPC npc) {
+        for (BaseActor jailBarsActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.objects.JailBars")) {
+            JailBars jailBars = (JailBars) jailBarsActor;
+            if (jailBars.getTrappedNPC() == npc) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void swingSword() {
@@ -310,7 +354,15 @@ public class LevelScreen3 extends BaseScreen {
 
         sword.setVisible(true);
         sword.addAction(Actions.rotateBy(swordArc, 0.25f));
-        sword.addAction(Actions.after(Actions.visible(false)));
+        sword.addAction(Actions.after(Actions.sequence(
+            Actions.visible(false),
+            Actions.run(() -> {
+                for (BaseActor jailBarsActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.objects.JailBars")) {
+                    JailBars jailBars = (JailBars) jailBarsActor;
+                    jailBars.resetHitThisSwing();
+                }
+            })
+        )));
 
         if (facingAngle == 90 || facingAngle == 180)
             mainCharacter.toFront();

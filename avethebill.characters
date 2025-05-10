@@ -1,0 +1,15 @@
+[33m8c6540b[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m)[m Upgraded shop, made it more understandeble, added spiders to second level(maze level), fixed a lot of bugs
+[33m76bea23[m Fixed bugs and changed logic of the treashure
+[33me22bd02[m Fixed bugs in LevelScreen2-3 with visualisation of buttons and shifted logic of this buttons to separate class for reuse. Also made it for inventory visualisation and added a music and sound effects to LevelScreen
+[33m588fe10[m Fixed bugs and upgraded logic for the screens. Next will fix new bugs with the ui bar
+[33m556d65f[m Try to involve new generation of map and objects with new movements. I will have done it by 25 of April or erlier
+[33m90567d3[m Changed screen size to full screen, but with some mistakes, so I'll fix it later. And before I made full screen view, I modernised map creating and added new passing objects
+[33m936f597[m Added sounds to levels: music, noises, etc; Temporary deleted LightMask because of bag
+[33m2d003d3[m Added sign with the text, the calc system of gotten npc's, reload button and added story screen before the game had started
+[33m2304338[m Upgraded forest maze and added some new fiches
+[33m35fa8c8[m Added in second level screen the forest maze with exit
+[33mf8d2afd[m Returned movement by wasd and run with shift. Added level screens for better game logic and rename classes with packags for understanding classes
+[33m9971853[m Fixed mistake, added code for borders and camera view of character. Also returned orc for losing main character
+[33m1873c3a[m Changed logic and rebased classes. Add object rock with collusion false
+[33mf9c909f[m Added Orc for loosing game also
+[33m7c80fba[m First commit and first beta game. Studying with libGDX
