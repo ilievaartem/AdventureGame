@@ -42,6 +42,10 @@ public class LevelScreen3 extends BaseScreen {
     private float audioVolume;
     private Sound pickUp;
     private Sound damageSound;
+    private Sound meleeSound;
+    private Sound shootSound;
+    private Sound hitPrisonSound; // Додаємо звук для удару по клітці
+    private Sound destroyPrisonSound; // Додаємо звук для руйнування клітки
     private Music instrumental;
     private Music windSurf;
     private float timeSinceVictory = 0;
@@ -86,7 +90,7 @@ public class LevelScreen3 extends BaseScreen {
             }
 
             if (Math.random() < 0.3) {
-                JailBars jailBars = new JailBars(x, y, mainStage, npc);
+                JailBars jailBars = new JailBars(x, y, mainStage, npc, this);
                 jailBars.centerAtActor(npc);
                 jailBars.toFront();
             }
@@ -129,6 +133,10 @@ public class LevelScreen3 extends BaseScreen {
 
         pickUp = Gdx.audio.newSound(Gdx.files.internal("Power_Drain.ogg"));
         damageSound = Gdx.audio.newSound(Gdx.files.internal("Damage_Character.ogg"));
+        meleeSound = Gdx.audio.newSound(Gdx.files.internal("Melee_Sound.ogg"));
+        shootSound = Gdx.audio.newSound(Gdx.files.internal("Shoot_2.ogg"));
+        hitPrisonSound = Gdx.audio.newSound(Gdx.files.internal("Hit_Prison.ogg"));
+        destroyPrisonSound = Gdx.audio.newSound(Gdx.files.internal("Destroy_Prison.ogg"));
         instrumental = Gdx.audio.newMusic(Gdx.files.internal("Master_of_the_Feast.ogg"));
         windSurf = Gdx.audio.newMusic(Gdx.files.internal("Birds_Wind.ogg"));
 
@@ -372,6 +380,10 @@ public class LevelScreen3 extends BaseScreen {
             mainCharacter.toFront();
         else
             sword.toFront();
+
+        if (meleeSound != null && controlHUD != null && !controlHUD.isMuted()) {
+            meleeSound.play(controlHUD.getEffectVolume());
+        }
     }
 
     public void shootArrow() {
@@ -384,6 +396,10 @@ public class LevelScreen3 extends BaseScreen {
         arrow.centerAtActor(mainCharacter);
         arrow.setRotation(mainCharacter.getFacingAngle());
         arrow.setMotionAngle(mainCharacter.getFacingAngle());
+
+        if (shootSound != null && controlHUD != null && !controlHUD.isMuted()) {
+            shootSound.play(controlHUD.getEffectVolume());
+        }
     }
 
     @Override
@@ -394,6 +410,18 @@ public class LevelScreen3 extends BaseScreen {
         }
         if (damageSound != null) {
             damageSound.dispose();
+        }
+        if (meleeSound != null) {
+            meleeSound.dispose();
+        }
+        if (shootSound != null) {
+            shootSound.dispose();
+        }
+        if (hitPrisonSound != null) {
+            hitPrisonSound.dispose();
+        }
+        if (destroyPrisonSound != null) {
+            destroyPrisonSound.dispose();
         }
         if (instrumental != null) {
             instrumental.stop();
@@ -412,5 +440,17 @@ public class LevelScreen3 extends BaseScreen {
         if (windSurf != null) {
             windSurf.setVolume(controlHUD.getWindVolume());
         }
+    }
+
+    public Sound getHitPrisonSound() {
+        return hitPrisonSound;
+    }
+
+    public Sound getDestroyPrisonSound() {
+        return destroyPrisonSound;
+    }
+
+    public ControlHUD getControlHUD() {
+        return controlHUD;
     }
 }

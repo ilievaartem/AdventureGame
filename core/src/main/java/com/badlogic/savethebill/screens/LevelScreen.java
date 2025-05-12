@@ -57,6 +57,8 @@ public class LevelScreen extends BaseScreen {
     private Sound coinPickup;
     private Sound itemPurchase;
     private Sound damageSound;
+    private Sound meleeSound;
+    private Sound shootSound;
 
     public LevelScreen() {
         this.health = 3;
@@ -163,6 +165,8 @@ public class LevelScreen extends BaseScreen {
         coinPickup = Gdx.audio.newSound(Gdx.files.internal("Ring_Inventory.ogg"));
         itemPurchase = Gdx.audio.newSound(Gdx.files.internal("Sell_Buy_Item.ogg"));
         damageSound = Gdx.audio.newSound(Gdx.files.internal("Damage_Character.ogg"));
+        meleeSound = Gdx.audio.newSound(Gdx.files.internal("Melee_Sound.ogg"));
+        shootSound = Gdx.audio.newSound(Gdx.files.internal("Shoot_2.ogg"));
 
         controlHUD.initializeLevelMusic("Music_Peaceful_Village.ogg");
     }
@@ -399,6 +403,10 @@ public class LevelScreen extends BaseScreen {
             hero.toFront();
         else
             sword.toFront();
+
+        if (meleeSound != null && controlHUD != null && !controlHUD.isMuted()) {
+            meleeSound.play(controlHUD.getEffectVolume());
+        }
     }
 
     public void shootArrow() {
@@ -411,6 +419,10 @@ public class LevelScreen extends BaseScreen {
         arrow.centerAtActor(hero);
         arrow.setRotation(hero.getFacingAngle());
         arrow.setMotionAngle(hero.getFacingAngle());
+
+        if (shootSound != null && controlHUD != null && !controlHUD.isMuted()) {
+            shootSound.play(controlHUD.getEffectVolume());
+        }
     }
 
     public boolean keyDown(int keycode) {
@@ -466,6 +478,12 @@ public class LevelScreen extends BaseScreen {
         }
         if (damageSound != null) {
             damageSound.dispose();
+        }
+        if (meleeSound != null) {
+            meleeSound.dispose();
+        }
+        if (shootSound != null) {
+            shootSound.dispose();
         }
     }
 

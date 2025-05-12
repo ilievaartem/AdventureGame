@@ -26,7 +26,7 @@ public class MenuScreen extends BaseScreen {
                 if (!(e instanceof InputEvent) ||
                     !((InputEvent) e).getType().equals(Type.touchDown))
                     return false;
-                BillGame.setActiveScreen(new StoryScreen());
+                BillGame.setActiveScreen(new LevelScreen3());
                 return false;
             }
         );
@@ -51,14 +51,14 @@ public class MenuScreen extends BaseScreen {
     }
 
     public void update(float dt) {
-        if (Gdx.input.isKeyPressed(Keys.S))
-            BillGame.setActiveScreen(new LevelScreen3());
+//        if (Gdx.input.isKeyPressed(Keys.S))
+//            BillGame.setActiveScreen(new LevelScreen2());
     }
 
     public boolean keyDown(int keyCode)
     {
         if (Gdx.input.isKeyPressed(Keys.ENTER))
-            BillGame.setActiveScreen( new StoryScreen() );
+            BillGame.setActiveScreen( new LevelScreen3() );
         if (Gdx.input.isKeyPressed(Keys.ESCAPE))
             Gdx.app.exit();
         return false;

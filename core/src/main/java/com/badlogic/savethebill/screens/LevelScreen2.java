@@ -39,6 +39,8 @@ public class LevelScreen2 extends BaseScreen {
     private Music windSurf;
     private Sound damageSound;
     private Sound spiderDeathSound;
+    private Sound meleeSound;
+    private Sound shootSound;
     private ShapeRenderer shapeRenderer;
     private SpriteBatch batch;
     private float crowSoundTimer = 0;
@@ -96,7 +98,7 @@ public class LevelScreen2 extends BaseScreen {
         sword.setVisible(false);
 
         Random random = new Random();
-        int spiderCount = 5;
+        int spiderCount = 10;
         for (int i = 0; i < spiderCount; i++) {
             int x, y;
             do {
@@ -116,6 +118,8 @@ public class LevelScreen2 extends BaseScreen {
         windSurf = Gdx.audio.newMusic(Gdx.files.internal("Scary_Сrow_Сaw.ogg"));
         damageSound = Gdx.audio.newSound(Gdx.files.internal("Damage_Character.ogg"));
         spiderDeathSound = Gdx.audio.newSound(Gdx.files.internal("Flyer_Death.ogg"));
+        meleeSound = Gdx.audio.newSound(Gdx.files.internal("Melee_Sound.ogg"));
+        shootSound = Gdx.audio.newSound(Gdx.files.internal("Shoot_2.ogg"));
 
         instrumental.setLooping(true);
         instrumental.setVolume(controlHUD.getInstrumentalVolume());
@@ -162,6 +166,12 @@ public class LevelScreen2 extends BaseScreen {
         }
         if (spiderDeathSound != null) {
             spiderDeathSound.dispose();
+        }
+        if (meleeSound != null) {
+            meleeSound.dispose();
+        }
+        if (shootSound != null) {
+            shootSound.dispose();
         }
     }
 
@@ -319,6 +329,10 @@ public class LevelScreen2 extends BaseScreen {
             mainCharacter.toFront();
         else
             sword.toFront();
+
+        if (meleeSound != null && controlHUD != null && !controlHUD.isMuted()) {
+            meleeSound.play(controlHUD.getEffectVolume());
+        }
     }
 
     public void shootArrow() {
@@ -331,6 +345,10 @@ public class LevelScreen2 extends BaseScreen {
         arrow.centerAtActor(mainCharacter);
         arrow.setRotation(mainCharacter.getFacingAngle());
         arrow.setMotionAngle(mainCharacter.getFacingAngle());
+
+        if (shootSound != null && controlHUD != null && !controlHUD.isMuted()) {
+            shootSound.play(controlHUD.getEffectVolume());
+        }
     }
 
     private void generateMaze() {

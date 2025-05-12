@@ -101,14 +101,14 @@
   <object id="5" gid="8" x="24" y="960" width="48" height="48"/>
   <object id="6" gid="8" x="192" y="1032" width="48" height="48"/>
   <object id="7" gid="8" x="240" y="1080" width="48" height="48"/>
-  <object id="8" gid="7" x="48" y="1008" width="48" height="48">
+  <object id="8" gid="7" x="48" y="1056" width="48" height="48">
    <properties>
-    <property name="message" value="Be careful, there are a lot of orcs!"/>
+    <property name="message" value="Be careful about orcs! They get villagers and pets. They even put hostage in prisons, that somebody can break by attacking them"/>
    </properties>
   </object>
   <object id="9" gid="7" x="936" y="120" width="48" height="48">
    <properties>
-    <property name="message" value="Next is a mountain valley"/>
+    <property name="message" value="Next is a mountain valley. Soon..."/>
    </properties>
   </object>
   <object id="10" gid="8" x="528" y="936" width="48" height="48"/>
