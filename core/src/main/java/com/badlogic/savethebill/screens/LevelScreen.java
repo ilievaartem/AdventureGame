@@ -60,6 +60,10 @@ public class LevelScreen extends BaseScreen {
     private Sound meleeSound;
     private Sound shootSound;
 
+    private boolean isNearExit = false;
+    private boolean isShowingExitDialog = false;
+    private float exitDialogTimer = 0f;
+
     public LevelScreen() {
         this.health = 3;
         this.coins = 5;
@@ -124,7 +128,9 @@ public class LevelScreen extends BaseScreen {
         dialogBox.setDialogSize(600, 100);
         dialogBox.setFontScale(0.80f);
         dialogBox.alignCenter();
-        dialogBox.setVisible(false);
+        dialogBox.setVisible(true);
+        dialogBox.setText("To help everyone, you need to prepare stronger and go down the passage");
+        dialogBox.addAction(Actions.sequence(Actions.delay(5f), Actions.fadeOut(1f), Actions.visible(false)));
 
         keyEIcon = new BaseActor(0, 0, uiStage);
         keyEIcon.loadTexture("key-E.png");
@@ -264,7 +270,7 @@ public class LevelScreen extends BaseScreen {
 
             boolean nearShopHeart = hero.isWithinDistance(4, shopHeart);
             boolean nearShopArrow = hero.isWithinDistance(4, shopArrow);
-            if ((nearShopHeart || nearShopArrow) && !isNearShopItem) {
+            if ((nearShopHeart || nearShopArrow) && !isNearShopItem && !isShowingExitDialog) {
                 dialogBox.setBackgroundColor(Color.TAN);
                 dialogBox.setText("To buy item, press E");
                 dialogBox.setVisible(true);
@@ -283,7 +289,7 @@ public class LevelScreen extends BaseScreen {
                 hero.preventOverlap(npc);
                 boolean nearby = hero.isWithinDistance(4, npc);
 
-                if (nearby && !npc.isViewing() && !isNearShopItem) {
+                if (nearby && !npc.isViewing() && !isNearShopItem && !isShowingExitDialog) {
                     if (npc.getID().equals("Gatekeeper")) {
                         int flyerCount = BaseActor.count(mainStage, "com.badlogic.savethebill.characters.Flyer");
                         String message = "Destroy the flyers and you can have the treasure. ";
@@ -326,6 +332,38 @@ public class LevelScreen extends BaseScreen {
                 treasureOpened = true;
                 if (!controlHUD.isMuted()) {
                     coinPickup.play(controlHUD.getEffectVolume());
+                }
+            }
+
+            if (hero.getY() <= 50 && !treasureOpened) {
+                System.out.println("Hero Y: " + hero.getY() + ", TreasureOpened: " + treasureOpened);
+                if (!isNearExit) {
+                    dialogBox.clearActions();
+                    dialogBox.setText("You cannot go further unprepared");
+                    dialogBox.setVisible(true);
+                    dialogBox.setOpacity(1f);
+                    isNearExit = true;
+                    isShowingExitDialog = true;
+                    exitDialogTimer = 0f;
+                    System.out.println("Exit dialog shown");
+                }
+            } else {
+                if (isNearExit) {
+                    dialogBox.setText(" ");
+                    dialogBox.setVisible(false);
+                    isNearExit = false;
+                    isShowingExitDialog = false;
+                    System.out.println("Exit dialog hidden");
+                }
+            }
+
+            if (isShowingExitDialog) {
+                exitDialogTimer += dt;
+                if (exitDialogTimer >= 3.0f) {
+                    dialogBox.setText(" ");
+                    dialogBox.setVisible(false);
+                    isShowingExitDialog = false;
+                    System.out.println("Exit dialog auto-hidden after 3 seconds");
                 }
             }
 
