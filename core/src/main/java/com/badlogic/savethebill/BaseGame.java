@@ -29,6 +29,8 @@ public abstract class BaseGame extends Game {
         InputMultiplexer im = new InputMultiplexer();
         Gdx.input.setInputProcessor(im);
 
+        GameSettings.getInstance();
+
         FreeTypeFontGenerator fontGenerator =
             new FreeTypeFontGenerator(Gdx.files.internal("OpenSans2.ttf"));
         FreeTypeFontParameter fontParameters = new FreeTypeFontParameter();

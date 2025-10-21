@@ -14,6 +14,7 @@ import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.savethebill.BaseActor;
 import com.badlogic.savethebill.BaseGame;
+import com.badlogic.savethebill.GameSettings;
 import com.badlogic.savethebill.characters.Flyer;
 import com.badlogic.savethebill.characters.Hero;
 import com.badlogic.savethebill.characters.NPC;
@@ -64,6 +65,8 @@ public class LevelScreen extends BaseScreen {
     private boolean isShowingExitDialog = false;
     private float exitDialogTimer = 0f;
 
+    private GameSettings gameSettings;
+
     public LevelScreen() {
         this.health = 3;
         this.coins = 5;
@@ -77,6 +80,8 @@ public class LevelScreen extends BaseScreen {
     }
 
     public void initialize() {
+        gameSettings = GameSettings.getInstance();
+
         Gdx.graphics.setFullscreenMode(Gdx.graphics.getDisplayMode());
 
         TilemapActor tma = new TilemapActor("map1.tmx", mainStage);
@@ -526,5 +531,7 @@ public class LevelScreen extends BaseScreen {
     }
 
     public void updateSoundsMuteState() {
+        // LevelScreen не має фонової музики, тому метод порожній
+        // але потрібен для сумісності з ControlHUD
     }
 }

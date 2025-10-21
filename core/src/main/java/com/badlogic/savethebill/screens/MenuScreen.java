@@ -31,6 +31,19 @@ public class MenuScreen extends BaseScreen {
             }
         );
 
+        TextButton settingsButton = new TextButton("Settings", BaseGame.textButtonStyle);
+
+        settingsButton.addListener(
+            (Event e) ->
+            {
+                if (!(e instanceof InputEvent) ||
+                    !((InputEvent) e).getType().equals(Type.touchDown))
+                    return false;
+                BillGame.setActiveScreen(new SettingsScreen(this));
+                return true;
+            }
+        );
+
         TextButton quitButton = new TextButton("Quit", BaseGame.textButtonStyle);
 
         quitButton.addListener(
@@ -44,9 +57,10 @@ public class MenuScreen extends BaseScreen {
             }
         );
 
-        uiTable.add(title).colspan(2);
+        uiTable.add(title).colspan(3);
         uiTable.row();
         uiTable.add(startButton);
+        uiTable.add(settingsButton);
         uiTable.add(quitButton);
     }
 

@@ -13,6 +13,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.savethebill.BaseActor;
 import com.badlogic.savethebill.BaseGame;
+import com.badlogic.savethebill.GameSettings;
 import com.badlogic.savethebill.characters.IcyHeroMovement;
 import com.badlogic.savethebill.characters.Spider;
 import com.badlogic.savethebill.objects.Arrow;
@@ -53,6 +54,7 @@ public class LevelScreen2 extends BaseScreen {
     private ControlHUD controlHUD;
     private HashMap<Spider, Float> spiderDamageCooldowns;
     private static final float DAMAGE_COOLDOWN = 1.0f;
+    private GameSettings gameSettings;
 
     public LevelScreen2() {
         this(3, 5, 3);
@@ -65,6 +67,7 @@ public class LevelScreen2 extends BaseScreen {
     }
 
     public void initialize() {
+        gameSettings = GameSettings.getInstance();
         shapeRenderer = new ShapeRenderer();
         batch = new SpriteBatch();
 
@@ -124,6 +127,10 @@ public class LevelScreen2 extends BaseScreen {
         instrumental.setLooping(true);
         instrumental.setVolume(controlHUD.getInstrumentalVolume());
         instrumental.play();
+
+        windSurf.setLooping(true);
+        windSurf.setVolume(controlHUD.getWindVolume());
+        windSurf.play();
 
         spiderDamageCooldowns = new HashMap<>();
     }

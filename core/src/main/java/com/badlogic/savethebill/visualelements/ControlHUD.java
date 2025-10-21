@@ -15,6 +15,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.savethebill.BaseGame;
 import com.badlogic.savethebill.BillGame;
+import com.badlogic.savethebill.GameSettings;
 import com.badlogic.savethebill.screens.BaseScreen;
 import com.badlogic.savethebill.screens.LevelScreen;
 import com.badlogic.savethebill.screens.LevelScreen2;
@@ -33,6 +34,7 @@ public class ControlHUD {
     private static final float EFFECT_VOLUME = 0.1f;
     private Stage uiStage;
     private BaseScreen currentScreen;
+    private GameSettings gameSettings;
 
     public ControlHUD(Stage uiStage, Class<? extends BaseScreen> screenClass, BaseScreen currentScreen) {
         this(uiStage, screenClass, currentScreen, false);
@@ -41,6 +43,7 @@ public class ControlHUD {
     public ControlHUD(Stage uiStage, Class<? extends BaseScreen> screenClass, BaseScreen currentScreen, boolean showNpcLabel) {
         this.uiStage = uiStage;
         this.currentScreen = currentScreen;
+        this.gameSettings = GameSettings.getInstance();
         uiTable = new Table();
         uiTable.setFillParent(true);
         uiTable.top();
@@ -95,7 +98,7 @@ public class ControlHUD {
                     : new TextureRegionDrawable(buttonRegion2);
 
                 if (levelMusic != null) {
-                    levelMusic.setVolume(isMuted ? 0 : LEVEL_MUSIC_VOLUME);
+                    levelMusic.setVolume(isMuted ? 0 : LEVEL_MUSIC_VOLUME * gameSettings.getMasterVolume() * gameSettings.getMusicVolume());
                 }
 
                 notifyMuteStateChanged();
@@ -105,7 +108,7 @@ public class ControlHUD {
         );
 
         if (showNpcLabel) {
-            npcLabel = new Label("Zoro's Left: 0", BaseGame.labelStyle);
+            npcLabel = new Label("Hostages Left: 0", BaseGame.labelStyle);
             npcLabel.setColor(Color.CYAN);
             uiTable.add(npcLabel).pad(10);
         } else {
@@ -120,7 +123,7 @@ public class ControlHUD {
     public void initializeLevelMusic(String musicFile) {
         levelMusic = Gdx.audio.newMusic(Gdx.files.internal(musicFile));
         levelMusic.setLooping(true);
-        levelMusic.setVolume(isMuted ? 0 : LEVEL_MUSIC_VOLUME);
+        levelMusic.setVolume(isMuted ? 0 : LEVEL_MUSIC_VOLUME * gameSettings.getMasterVolume() * gameSettings.getMusicVolume());
         levelMusic.play();
     }
 
@@ -133,29 +136,29 @@ public class ControlHUD {
     }
 
     public void updateMuteState(float instrumentalVolume, float windVolume) {
-        instrumentalVolume = isMuted ? 0 : INSTRUMENTAL_VOLUME;
-        windVolume = isMuted ? 0 : WIND_VOLUME;
+        instrumentalVolume = isMuted ? 0 : INSTRUMENTAL_VOLUME * gameSettings.getMasterVolume() * gameSettings.getMusicVolume();
+        windVolume = isMuted ? 0 : WIND_VOLUME * gameSettings.getMasterVolume() * gameSettings.getMusicVolume();
         if (levelMusic != null) {
-            levelMusic.setVolume(isMuted ? 0 : LEVEL_MUSIC_VOLUME);
+            levelMusic.setVolume(isMuted ? 0 : LEVEL_MUSIC_VOLUME * gameSettings.getMasterVolume() * gameSettings.getMusicVolume());
         }
     }
 
     public void updateNpcLabel(int count) {
         if (npcLabel != null) {
-            npcLabel.setText("Zoro's Left: " + count);
+            npcLabel.setText("Hostages Left: " + count);
         }
     }
 
     public float getInstrumentalVolume() {
-        return isMuted ? 0 : INSTRUMENTAL_VOLUME;
+        return isMuted ? 0 : INSTRUMENTAL_VOLUME * gameSettings.getMasterVolume() * gameSettings.getMusicVolume();
     }
 
     public float getWindVolume() {
-        return isMuted ? 0 : WIND_VOLUME;
+        return isMuted ? 0 : WIND_VOLUME * gameSettings.getMasterVolume() * gameSettings.getMusicVolume();
     }
 
     public float getEffectVolume() {
-        return isMuted ? 0 : EFFECT_VOLUME;
+        return isMuted ? 0 : EFFECT_VOLUME * gameSettings.getMasterVolume() * gameSettings.getSoundVolume();
     }
 
     public boolean isMuted() {

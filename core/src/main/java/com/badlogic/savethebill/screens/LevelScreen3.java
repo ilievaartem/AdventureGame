@@ -12,6 +12,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.savethebill.BaseActor;
 import com.badlogic.savethebill.BaseGame;
+import com.badlogic.savethebill.GameSettings;
 import com.badlogic.savethebill.characters.Hero;
 import com.badlogic.savethebill.characters.NPC;
 import com.badlogic.savethebill.characters.NPCDog;
@@ -54,6 +55,7 @@ public class LevelScreen3 extends BaseScreen {
     private static final float DROP_VOLUME = 0.1f;
     private static final float ORC_DAMAGE_COOLDOWN = 1.0f;
     private float orcDamageTimer;
+    private GameSettings gameSettings;
 
     public LevelScreen3() {
         this(3, 5, 3);
@@ -67,6 +69,7 @@ public class LevelScreen3 extends BaseScreen {
     }
 
     public void initialize() {
+        gameSettings = GameSettings.getInstance();
         TilemapActor tma = new TilemapActor("map.tmx", mainStage);
 
         inventoryHUD = new InventoryHUD(uiStage, health, coins, arrows);
@@ -144,6 +147,7 @@ public class LevelScreen3 extends BaseScreen {
         instrumental.setLooping(true);
         instrumental.setVolume(controlHUD.getInstrumentalVolume());
         instrumental.play();
+
         windSurf.setLooping(true);
         windSurf.setVolume(controlHUD.getWindVolume());
         windSurf.play();
