@@ -14,6 +14,7 @@ import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.savethebill.BaseActor;
 import com.badlogic.savethebill.BaseGame;
+import com.badlogic.savethebill.BillGame;
 import com.badlogic.savethebill.GameSettings;
 import com.badlogic.savethebill.characters.Flyer;
 import com.badlogic.savethebill.characters.Hero;
@@ -472,6 +473,11 @@ public class LevelScreen extends BaseScreen {
         if (gameOver)
             return false;
 
+        if (keycode == Keys.ESCAPE) {
+            BillGame.setActiveScreen(new PauseScreen(this, LevelScreen.class, controlHUD.isMuted()));
+            return true;
+        }
+
         if (keycode == Keys.F) {
             if (isFullscreen) {
                 Gdx.graphics.setWindowedMode(800, 600);
@@ -531,7 +537,21 @@ public class LevelScreen extends BaseScreen {
     }
 
     public void updateSoundsMuteState() {
-        // LevelScreen не має фонової музики, тому метод порожній
-        // але потрібен для сумісності з ControlHUD
+    }
+
+    public void updateSoundSettings() {
+        if (controlHUD != null) {
+            controlHUD.updateSoundSettings();
+        }
+    }
+
+    public void setMuted(boolean muted) {
+        if (controlHUD != null) {
+            controlHUD.setMuted(muted);
+        }
+    }
+
+    public ControlHUD getControlHUD() {
+        return controlHUD;
     }
 }

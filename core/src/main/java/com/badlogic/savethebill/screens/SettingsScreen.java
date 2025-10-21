@@ -2,13 +2,13 @@ package com.badlogic.savethebill.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.NinePatch;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Event;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputEvent.Type;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Slider;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
@@ -36,28 +36,20 @@ public class SettingsScreen extends BaseScreen {
     public void initialize() {
         settings = GameSettings.getInstance();
 
-        // Background
         BaseActor background = new BaseActor(0, 0, mainStage);
         background.loadTexture("Summer6.png");
         background.setSize(mainStage.getViewport().getWorldWidth(), mainStage.getViewport().getWorldHeight());
 
-        // Title
-//        BaseActor title = new BaseActor(0, 0, mainStage);
-//        title.loadTexture("settings.png");
-//        title.setPosition(
-//            (mainStage.getViewport().getWorldWidth() - title.getWidth()) / 2,
-//            mainStage.getViewport().getWorldHeight() - title.getHeight() - 50
-//        );
+        Label settingsTitle = new Label("SETTINGS", BaseGame.labelStyle);
+        settingsTitle.setColor(Color.WHITE);
+        settingsTitle.setFontScale(2.0f);
 
-        // Create slider style
         Slider.SliderStyle sliderStyle = createSliderStyle();
 
-        // Create labels
         masterVolumeLabel = new Label("Total volume: " + Math.round(settings.getMasterVolume() * 100) + "%", BaseGame.labelStyle);
         musicVolumeLabel = new Label("Music: " + Math.round(settings.getMusicVolume() * 100) + "%", BaseGame.labelStyle);
         soundVolumeLabel = new Label("Sound: " + Math.round(settings.getSoundVolume() * 100) + "%", BaseGame.labelStyle);
 
-        // Create sliders
         masterVolumeSlider = new Slider(0f, 1f, 0.1f, false, sliderStyle);
         masterVolumeSlider.setValue(settings.getMasterVolume());
         masterVolumeSlider.addListener(new ChangeListener() {
@@ -65,6 +57,7 @@ public class SettingsScreen extends BaseScreen {
             public void changed(ChangeEvent event, Actor actor) {
                 settings.setMasterVolume(masterVolumeSlider.getValue());
                 masterVolumeLabel.setText("Total volume: " + Math.round(settings.getMasterVolume() * 100) + "%");
+                updateGameSounds();
             }
         });
 
@@ -75,6 +68,7 @@ public class SettingsScreen extends BaseScreen {
             public void changed(ChangeEvent event, Actor actor) {
                 settings.setMusicVolume(musicVolumeSlider.getValue());
                 musicVolumeLabel.setText("Music: " + Math.round(settings.getMusicVolume() * 100) + "%");
+                updateGameSounds();
             }
         });
 
@@ -85,10 +79,10 @@ public class SettingsScreen extends BaseScreen {
             public void changed(ChangeEvent event, Actor actor) {
                 settings.setSoundVolume(soundVolumeSlider.getValue());
                 soundVolumeLabel.setText("Sound: " + Math.round(settings.getSoundVolume() * 100) + "%");
+                updateGameSounds();
             }
         });
 
-        // Create buttons
         TextButton saveButton = new TextButton("Save", BaseGame.textButtonStyle);
         saveButton.addListener((Event e) -> {
             if (!(e instanceof InputEvent) || !((InputEvent) e).getType().equals(Type.touchDown))
@@ -108,6 +102,7 @@ public class SettingsScreen extends BaseScreen {
                 return false;
             settings.resetToDefaults();
             updateSliders();
+            updateGameSounds();
             return true;
         });
 
@@ -123,10 +118,8 @@ public class SettingsScreen extends BaseScreen {
             return true;
         });
 
-        // Layout
-        Texture settingsTexture = new Texture(Gdx.files.internal("settings.png"));
-        Image titleImage = new Image(settingsTexture);
-        uiTable.add(titleImage).colspan(450).padBottom(15);
+        uiTable.center();
+        uiTable.add(settingsTitle).colspan(3).padBottom(30);
         uiTable.row();
 
         uiTable.add(masterVolumeLabel).padBottom(10);
@@ -149,15 +142,23 @@ public class SettingsScreen extends BaseScreen {
         uiTable.add(backButton);
     }
 
+    private void updateGameSounds() {
+        if (previousScreen instanceof LevelScreen) {
+            ((LevelScreen) previousScreen).updateSoundSettings();
+        } else if (previousScreen instanceof LevelScreen2) {
+            ((LevelScreen2) previousScreen).updateSoundSettings();
+        } else if (previousScreen instanceof LevelScreen3) {
+            ((LevelScreen3) previousScreen).updateSoundSettings();
+        }
+    }
+
     private Slider.SliderStyle createSliderStyle() {
         Slider.SliderStyle sliderStyle = new Slider.SliderStyle();
 
-        // Create slider background
         Texture sliderBg = new Texture(Gdx.files.internal("button.png"));
         NinePatch sliderBgPatch = new NinePatch(sliderBg, 12, 12, 12, 12);
         sliderStyle.background = new NinePatchDrawable(sliderBgPatch);
 
-        // Create slider knob
         Texture knobTex = new Texture(Gdx.files.internal("button.png"));
         NinePatch knobPatch = new NinePatch(knobTex, 12, 12, 12, 12);
         sliderStyle.knob = new NinePatchDrawable(knobPatch);
@@ -176,16 +177,11 @@ public class SettingsScreen extends BaseScreen {
     }
 
     public void update(float dt) {
-        // No additional update logic needed
     }
 
     public boolean keyDown(int keyCode) {
         if (keyCode == Keys.ESCAPE) {
-            if (previousScreen != null) {
-                BillGame.setActiveScreen(previousScreen);
-            } else {
-                BillGame.setActiveScreen(new MenuScreen());
-            }
+            BillGame.setActiveScreen(previousScreen);
             return true;
         }
         return false;

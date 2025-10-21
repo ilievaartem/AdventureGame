@@ -2,6 +2,7 @@ package com.badlogic.savethebill.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Buttons;
+import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
@@ -13,6 +14,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.savethebill.BaseActor;
 import com.badlogic.savethebill.BaseGame;
+import com.badlogic.savethebill.BillGame;
 import com.badlogic.savethebill.GameSettings;
 import com.badlogic.savethebill.characters.IcyHeroMovement;
 import com.badlogic.savethebill.characters.Spider;
@@ -429,5 +431,30 @@ public class LevelScreen2 extends BaseScreen {
         if (windSurf != null) {
             windSurf.setVolume(controlHUD.getWindVolume());
         }
+    }
+
+    public void updateSoundSettings() {
+        if (controlHUD != null) {
+            controlHUD.updateSoundSettings();
+            updateSoundsMuteState();
+        }
+    }
+
+    public boolean keyDown(int keyCode) {
+        if (keyCode == Keys.ESCAPE) {
+            BillGame.setActiveScreen(new PauseScreen(this, LevelScreen2.class, controlHUD.isMuted()));
+            return true;
+        }
+        return false;
+    }
+
+    public void setMuted(boolean muted) {
+        if (controlHUD != null) {
+            controlHUD.setMuted(muted);
+        }
+    }
+
+    public ControlHUD getControlHUD() {
+        return controlHUD;
     }
 }

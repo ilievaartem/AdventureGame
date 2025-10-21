@@ -12,6 +12,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.savethebill.BaseActor;
 import com.badlogic.savethebill.BaseGame;
+import com.badlogic.savethebill.BillGame;
 import com.badlogic.savethebill.GameSettings;
 import com.badlogic.savethebill.characters.Hero;
 import com.badlogic.savethebill.characters.NPC;
@@ -446,6 +447,13 @@ public class LevelScreen3 extends BaseScreen {
         }
     }
 
+    public void updateSoundSettings() {
+        if (controlHUD != null) {
+            controlHUD.updateSoundSettings();
+            updateSoundsMuteState();
+        }
+    }
+
     public Sound getHitPrisonSound() {
         return hitPrisonSound;
     }
@@ -456,5 +464,19 @@ public class LevelScreen3 extends BaseScreen {
 
     public ControlHUD getControlHUD() {
         return controlHUD;
+    }
+
+    public void setMuted(boolean muted) {
+        if (controlHUD != null) {
+            controlHUD.setMuted(muted);
+        }
+    }
+
+    public boolean keyDown(int keyCode) {
+        if (keyCode == Keys.ESCAPE) {
+            BillGame.setActiveScreen(new PauseScreen(this, LevelScreen3.class, controlHUD.isMuted()));
+            return true;
+        }
+        return false;
     }
 }
