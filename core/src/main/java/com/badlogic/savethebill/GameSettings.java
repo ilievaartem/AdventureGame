@@ -12,6 +12,7 @@ public class GameSettings {
     private float masterVolume = 1.0f;
     private float musicVolume = 1.0f;
     private float soundVolume = 1.0f;
+    private boolean isMuted = false;
 
     private GameSettings() {
         prefs = Gdx.app.getPreferences("game-settings");
@@ -29,12 +30,14 @@ public class GameSettings {
         masterVolume = prefs.getFloat("masterVolume", 1.0f);
         musicVolume = prefs.getFloat("musicVolume", 1.0f);
         soundVolume = prefs.getFloat("soundVolume", 1.0f);
+        isMuted = prefs.getBoolean("isMuted", false);
     }
 
     public void saveSettings() {
         prefs.putFloat("masterVolume", masterVolume);
         prefs.putFloat("musicVolume", musicVolume);
         prefs.putFloat("soundVolume", soundVolume);
+        prefs.putBoolean("isMuted", isMuted);
         prefs.flush();
     }
 
@@ -42,6 +45,7 @@ public class GameSettings {
         masterVolume = 1.0f;
         musicVolume = 1.0f;
         soundVolume = 1.0f;
+        isMuted = false;
         saveSettings();
     }
 
@@ -69,12 +73,20 @@ public class GameSettings {
         this.soundVolume = Math.max(0f, Math.min(1f, volume));
     }
 
+    public boolean isMuted() {
+        return isMuted;
+    }
+
+    public void setMuted(boolean muted) {
+        this.isMuted = muted;
+    }
+
     public float getEffectiveMusicVolume() {
-        return masterVolume * musicVolume;
+        return isMuted ? 0 : masterVolume * musicVolume;
     }
 
     public float getEffectiveSoundVolume() {
-        return masterVolume * soundVolume;
+        return isMuted ? 0 : masterVolume * soundVolume;
     }
 
     public void applyVolumeToMusic(Music music) {

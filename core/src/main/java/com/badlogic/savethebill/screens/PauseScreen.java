@@ -14,20 +14,24 @@ import com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable;
 import com.badlogic.savethebill.BaseActor;
 import com.badlogic.savethebill.BaseGame;
 import com.badlogic.savethebill.BillGame;
+import com.badlogic.savethebill.GameSettings;
 
 public class PauseScreen extends BaseScreen {
     private final BaseScreen gameScreen;
     private final Class<? extends BaseScreen> gameScreenClass;
-    private boolean isMuted;
     private TextButton muteButton;
+    private GameSettings gameSettings;
+    private boolean showRestartHint = false;
+    private Label restartHintLabel;
 
     public PauseScreen(BaseScreen gameScreen, Class<? extends BaseScreen> gameScreenClass, boolean isMuted) {
         this.gameScreen = gameScreen;
         this.gameScreenClass = gameScreenClass;
-        this.isMuted = isMuted;
     }
 
     public void initialize() {
+        this.gameSettings = GameSettings.getInstance();
+
         BaseActor background = new BaseActor(0, 0, mainStage);
         background.loadTexture("Summer6.png");
         background.setSize(mainStage.getViewport().getWorldWidth(), mainStage.getViewport().getWorldHeight());
@@ -51,6 +55,7 @@ public class PauseScreen extends BaseScreen {
         settingsButton.addListener((Event e) -> {
             if (!(e instanceof InputEvent) || !((InputEvent) e).getType().equals(Type.touchDown))
                 return false;
+            showSoundRestartHint();
             BillGame.setActiveScreen(new SettingsScreen(this));
             return true;
         });
@@ -63,7 +68,7 @@ public class PauseScreen extends BaseScreen {
             return true;
         });
 
-        String muteText = isMuted ? "Unmute" : "Mute";
+        String muteText = gameSettings.isMuted() ? "Unmute" : "Mute";
         muteButton = new TextButton(muteText, buttonStyle);
         muteButton.addListener((Event e) -> {
             if (!(e instanceof InputEvent) || !((InputEvent) e).getType().equals(Type.touchDown))
@@ -92,6 +97,18 @@ public class PauseScreen extends BaseScreen {
         uiTable.add(muteButton).width(250).height(60).padBottom(15);
         uiTable.row();
         uiTable.add(exitButton).width(250).height(60);
+
+        if (showRestartHint) {
+            restartHintLabel = new Label("Note: Restart level to fully apply sound changes", BaseGame.labelStyle);
+            restartHintLabel.setColor(Color.YELLOW);
+            restartHintLabel.setFontScale(0.7f);
+            uiTable.row();
+            uiTable.add(restartHintLabel).padTop(20);
+        }
+    }
+
+    public void showSoundRestartHint() {
+        this.showRestartHint = true;
     }
 
     private TextButton.TextButtonStyle createButtonStyle() {
@@ -125,15 +142,18 @@ public class PauseScreen extends BaseScreen {
     }
 
     private void toggleMute() {
-        isMuted = !isMuted;
-        muteButton.setText(isMuted ? "Unmute" : "Mute");
+        boolean newMuteState = !gameSettings.isMuted();
+        gameSettings.setMuted(newMuteState);
+        gameSettings.saveSettings();
+
+        muteButton.setText(newMuteState ? "Unmute" : "Mute");
 
         if (gameScreen instanceof LevelScreen) {
-            ((LevelScreen) gameScreen).setMuted(isMuted);
+            ((LevelScreen) gameScreen).setMuted(newMuteState);
         } else if (gameScreen instanceof LevelScreen2) {
-            ((LevelScreen2) gameScreen).setMuted(isMuted);
+            ((LevelScreen2) gameScreen).setMuted(newMuteState);
         } else if (gameScreen instanceof LevelScreen3) {
-            ((LevelScreen3) gameScreen).setMuted(isMuted);
+            ((LevelScreen3) gameScreen).setMuted(newMuteState);
         }
     }
 
@@ -157,18 +177,11 @@ public class PauseScreen extends BaseScreen {
 
     @Override
     public void render(float delta) {
-        boolean currentMuteState = false;
-        if (gameScreen instanceof LevelScreen) {
-            currentMuteState = ((LevelScreen) gameScreen).getControlHUD().isMuted();
-        } else if (gameScreen instanceof LevelScreen2) {
-            currentMuteState = ((LevelScreen2) gameScreen).getControlHUD().isMuted();
-        } else if (gameScreen instanceof LevelScreen3) {
-            currentMuteState = ((LevelScreen3) gameScreen).getControlHUD().isMuted();
-        }
+        boolean currentMuteState = gameSettings.isMuted();
+        String expectedText = currentMuteState ? "Unmute" : "Mute";
 
-        if (currentMuteState != isMuted) {
-            isMuted = currentMuteState;
-            muteButton.setText(isMuted ? "Unmute" : "Mute");
+        if (!muteButton.getText().toString().equals(expectedText)) {
+            muteButton.setText(expectedText);
         }
 
         super.render(delta);

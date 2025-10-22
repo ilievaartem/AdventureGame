@@ -29,6 +29,7 @@ import com.badlogic.savethebill.objects.Treasure;
 import com.badlogic.savethebill.visualelements.ControlHUD;
 import com.badlogic.savethebill.visualelements.DialogBox;
 import com.badlogic.savethebill.visualelements.InventoryHUD;
+import com.badlogic.savethebill.visualelements.MiniMap;
 import com.badlogic.savethebill.visualelements.ShopArrow;
 import com.badlogic.savethebill.visualelements.ShopHeart;
 import com.badlogic.savethebill.visualelements.Smoke;
@@ -55,6 +56,7 @@ public class LevelScreen extends BaseScreen {
     private boolean treasureOpened = false;
     private InventoryHUD inventoryHUD;
     private ControlHUD controlHUD;
+    // private MiniMap miniMap;
     private Sound flyerDeath;
     private Sound coinPickup;
     private Sound itemPurchase;
@@ -65,7 +67,6 @@ public class LevelScreen extends BaseScreen {
     private boolean isNearExit = false;
     private boolean isShowingExitDialog = false;
     private float exitDialogTimer = 0f;
-
     private GameSettings gameSettings;
 
     public LevelScreen() {
@@ -124,6 +125,9 @@ public class LevelScreen extends BaseScreen {
 
         inventoryHUD = new InventoryHUD(uiStage, health, coins, arrows);
         controlHUD = new ControlHUD(uiStage, LevelScreen.class, this);
+
+        // Minimap is commented out - not displayed but class is kept
+        // miniMap = new MiniMap(uiStage, mainStage, hero);
 
         messageLabel = new Label("...", BaseGame.labelStyle);
         messageLabel.setVisible(false);

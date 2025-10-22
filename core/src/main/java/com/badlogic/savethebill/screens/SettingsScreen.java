@@ -28,9 +28,11 @@ public class SettingsScreen extends BaseScreen {
     private Label soundVolumeLabel;
     private GameSettings settings;
     private final BaseScreen previousScreen;
+    private final boolean isFromPause;
 
     public SettingsScreen(BaseScreen previousScreen) {
         this.previousScreen = previousScreen;
+        this.isFromPause = (previousScreen instanceof PauseScreen);
     }
 
     public void initialize() {
@@ -47,8 +49,13 @@ public class SettingsScreen extends BaseScreen {
         Slider.SliderStyle sliderStyle = createSliderStyle();
 
         masterVolumeLabel = new Label("Total volume: " + Math.round(settings.getMasterVolume() * 100) + "%", BaseGame.labelStyle);
+        masterVolumeLabel.setColor(Color.WHITE);
+
         musicVolumeLabel = new Label("Music: " + Math.round(settings.getMusicVolume() * 100) + "%", BaseGame.labelStyle);
+        musicVolumeLabel.setColor(Color.WHITE);
+
         soundVolumeLabel = new Label("Sound: " + Math.round(settings.getSoundVolume() * 100) + "%", BaseGame.labelStyle);
+        soundVolumeLabel.setColor(Color.WHITE);
 
         masterVolumeSlider = new Slider(0f, 1f, 0.1f, false, sliderStyle);
         masterVolumeSlider.setValue(settings.getMasterVolume());
@@ -119,27 +126,27 @@ public class SettingsScreen extends BaseScreen {
         });
 
         uiTable.center();
-        uiTable.add(settingsTitle).colspan(3).padBottom(30);
+        uiTable.add(settingsTitle).colspan(3).padBottom(40);
         uiTable.row();
 
-        uiTable.add(masterVolumeLabel).padBottom(10);
+        uiTable.add(masterVolumeLabel).colspan(3).padBottom(10);
         uiTable.row();
-        uiTable.add(masterVolumeSlider).width(300).padBottom(20);
-        uiTable.row();
-
-        uiTable.add(musicVolumeLabel).padBottom(10);
-        uiTable.row();
-        uiTable.add(musicVolumeSlider).width(300).padBottom(20);
+        uiTable.add(masterVolumeSlider).colspan(3).width(300).padBottom(20);
         uiTable.row();
 
-        uiTable.add(soundVolumeLabel).padBottom(10);
+        uiTable.add(musicVolumeLabel).colspan(3).padBottom(10);
         uiTable.row();
-        uiTable.add(soundVolumeSlider).width(300).padBottom(30);
+        uiTable.add(musicVolumeSlider).colspan(3).width(300).padBottom(20);
         uiTable.row();
 
-        uiTable.add(saveButton).padRight(10);
-        uiTable.add(resetButton).padRight(10);
-        uiTable.add(backButton);
+        uiTable.add(soundVolumeLabel).colspan(3).padBottom(10);
+        uiTable.row();
+        uiTable.add(soundVolumeSlider).colspan(3).width(300).padBottom(30);
+        uiTable.row();
+
+        uiTable.add(saveButton).width(120).height(50).padRight(10);
+        uiTable.add(resetButton).width(120).height(50).padRight(10).padLeft(10);
+        uiTable.add(backButton).width(120).height(50).padLeft(10);
     }
 
     private void updateGameSounds() {
