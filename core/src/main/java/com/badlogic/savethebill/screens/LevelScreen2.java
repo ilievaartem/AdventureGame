@@ -16,6 +16,7 @@ import com.badlogic.savethebill.BaseActor;
 import com.badlogic.savethebill.BaseGame;
 import com.badlogic.savethebill.BillGame;
 import com.badlogic.savethebill.GameSettings;
+import com.badlogic.savethebill.SaveManager;
 import com.badlogic.savethebill.characters.IcyHeroMovement;
 import com.badlogic.savethebill.characters.Spider;
 import com.badlogic.savethebill.objects.Arrow;
@@ -298,6 +299,8 @@ public class LevelScreen2 extends BaseScreen {
                 System.out.println("Win condition met! Transitioning to LevelScreen3");
                 instrumental.stop();
                 windSurf.stop();
+                // Auto-save progress when transitioning to next level
+                SaveManager.getInstance().autoSave(3, health, coins, arrows);
                 BaseGame.setActiveScreen(new LevelScreen3(health, coins, arrows));
             }
         }
@@ -456,5 +459,27 @@ public class LevelScreen2 extends BaseScreen {
 
     public ControlHUD getControlHUD() {
         return controlHUD;
+    }
+
+    public int getHealth() {
+        return health;
+    }
+
+    public int getCoins() {
+        return coins;
+    }
+
+    public int getArrows() {
+        return arrows;
+    }
+
+    public String getDestroyedObjects() {
+        int remainingSpiders = BaseActor.count(mainStage, "com.badlogic.savethebill.characters.Spider");
+        return "spiders_remaining:" + remainingSpiders;
+    }
+
+    public boolean isTreasureOpened() {
+        // LevelScreen2 doesn't have treasures, but we track if level is completed
+        return win;
     }
 }

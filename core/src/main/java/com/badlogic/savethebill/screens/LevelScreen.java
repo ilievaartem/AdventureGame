@@ -16,6 +16,7 @@ import com.badlogic.savethebill.BaseActor;
 import com.badlogic.savethebill.BaseGame;
 import com.badlogic.savethebill.BillGame;
 import com.badlogic.savethebill.GameSettings;
+import com.badlogic.savethebill.SaveManager;
 import com.badlogic.savethebill.characters.Flyer;
 import com.badlogic.savethebill.characters.Hero;
 import com.badlogic.savethebill.characters.NPC;
@@ -69,6 +70,8 @@ public class LevelScreen extends BaseScreen {
     private float exitDialogTimer = 0f;
     private GameSettings gameSettings;
 
+    private java.util.Set<String> destroyedObjects = new java.util.HashSet<>();
+
     public LevelScreen() {
         this.health = 3;
         this.coins = 5;
@@ -86,7 +89,16 @@ public class LevelScreen extends BaseScreen {
 
         Gdx.graphics.setFullscreenMode(Gdx.graphics.getDisplayMode());
 
-        TilemapActor tma = new TilemapActor("map1.tmx", mainStage);
+        TilemapActor tma;
+        try {
+            tma = new TilemapActor("map2.tmx", mainStage);
+            System.out.println("Successfully loaded map2.tmx");
+        } catch (Exception e) {
+            System.err.println("Error loading map2.tmx: " + e.getMessage());
+            e.printStackTrace();
+            System.out.println("Falling back to map1.tmx");
+            tma = new TilemapActor("map1.tmx", mainStage);
+        }
 
         for (MapObject obj : tma.getRectangleList("Solid")) {
             MapProperties props = obj.getProperties();
@@ -229,12 +241,19 @@ public class LevelScreen extends BaseScreen {
 
             if (sword.isVisible()) {
                 for (BaseActor bush : BaseActor.getList(mainStage, "com.badlogic.savethebill.objects.Bush")) {
-                    if (sword.overlaps(bush))
+                    if (sword.overlaps(bush)) {
+                        // Track destroyed bush position
+                        String bushId = "bush_" + (int)bush.getX() + "_" + (int)bush.getY();
+                        destroyedObjects.add(bushId);
                         bush.remove();
+                    }
                 }
 
                 for (BaseActor flyer : BaseActor.getList(mainStage, "com.badlogic.savethebill.characters.Flyer")) {
                     if (sword.overlaps(flyer)) {
+                        // Track destroyed flyer position
+                        String flyerId = "flyer_" + (int)flyer.getX() + "_" + (int)flyer.getY();
+                        destroyedObjects.add(flyerId);
                         flyer.remove();
                         Coin coin = new Coin(0, 0, mainStage);
                         coin.centerAtActor(flyer);
@@ -379,6 +398,8 @@ public class LevelScreen extends BaseScreen {
 
             if (treasureOpened && hero.getY() <= 0) {
                 controlHUD.dispose();
+                // Auto-save progress when transitioning to next level
+                SaveManager.getInstance().autoSave(2, health, coins, arrows);
                 BaseGame.setActiveScreen(new LevelScreen2(health, coins, arrows));
             }
 
@@ -557,5 +578,27 @@ public class LevelScreen extends BaseScreen {
 
     public ControlHUD getControlHUD() {
         return controlHUD;
+    }
+
+    // Getter methods for save system
+    public int getHealth() {
+        return health;
+    }
+
+    public int getCoins() {
+        return coins;
+    }
+
+    public int getArrows() {
+        return arrows;
+    }
+
+    // Methods for world state saving
+    public String getDestroyedObjects() {
+        return String.join(",", destroyedObjects);
+    }
+
+    public boolean isTreasureOpened() {
+        return treasureOpened;
     }
 }

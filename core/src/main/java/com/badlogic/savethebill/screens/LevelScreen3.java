@@ -479,4 +479,28 @@ public class LevelScreen3 extends BaseScreen {
         }
         return false;
     }
+
+    public int getHealth() {
+        return health;
+    }
+
+    public int getCoins() {
+        return coins;
+    }
+
+    public int getArrows() {
+        return arrows;
+    }
+
+    public String getDestroyedObjects() {
+        int remainingNPCs = BaseActor.count(mainStage, "com.badlogic.savethebill.characters.NPC");
+        int remainingJailBars = BaseActor.count(mainStage, "com.badlogic.savethebill.objects.JailBars");
+        int remainingOrcs = BaseActor.count(mainStage, "com.badlogic.savethebill.characters.Orc");
+        return "npcs_remaining:" + remainingNPCs + ",jailbars:" + remainingJailBars + ",orcs:" + remainingOrcs;
+    }
+
+    public boolean isTreasureOpened() {
+        // LevelScreen3 doesn't have treasures, but we track if level is completed (all NPCs collected)
+        return win;
+    }
 }
