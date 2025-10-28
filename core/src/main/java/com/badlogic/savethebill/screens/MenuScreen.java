@@ -25,21 +25,32 @@ public class MenuScreen extends BaseScreen {
         BaseActor title = new BaseActor(0, 0, mainStage);
         title.loadTexture("game-name.png");
 
-        TextButton newGameButton = new TextButton("New Game", BaseGame.textButtonStyle);
+        TextButton.TextButtonStyle newGameStyle = new TextButton.TextButtonStyle(BaseGame.textButtonStyle);
+        newGameStyle.fontColor = Color.WHITE;
+
+        TextButton.TextButtonStyle continueStyle = new TextButton.TextButtonStyle(BaseGame.textButtonStyle);
+        continueStyle.fontColor = Color.WHITE;
+
+        TextButton.TextButtonStyle settingsStyle = new TextButton.TextButtonStyle(BaseGame.textButtonStyle);
+        settingsStyle.fontColor = Color.WHITE;
+
+        TextButton.TextButtonStyle quitStyle = new TextButton.TextButtonStyle(BaseGame.textButtonStyle);
+        quitStyle.fontColor = Color.WHITE;
+
+        TextButton newGameButton = new TextButton("New Game", newGameStyle);
         newGameButton.addListener(
             (Event e) ->
             {
                 if (!(e instanceof InputEvent) ||
                     !((InputEvent) e).getType().equals(Type.touchDown))
                     return false;
-                // Clear any existing save when starting new game
                 saveManager.deleteSave();
                 BillGame.setActiveScreen(new CutsceneScreen());
                 return true;
             }
         );
 
-        continueButton = new TextButton("Continue", BaseGame.textButtonStyle);
+        continueButton = new TextButton("Continue", continueStyle);
         continueButton.addListener(
             (Event e) ->
             {
@@ -53,7 +64,7 @@ public class MenuScreen extends BaseScreen {
 
         updateContinueButtonStyle();
 
-        TextButton settingsButton = new TextButton("Settings", BaseGame.textButtonStyle);
+        TextButton settingsButton = new TextButton("Settings", settingsStyle);
 
         settingsButton.addListener(
             (Event e) ->
@@ -66,7 +77,7 @@ public class MenuScreen extends BaseScreen {
             }
         );
 
-        TextButton quitButton = new TextButton("Quit", BaseGame.textButtonStyle);
+        TextButton quitButton = new TextButton("Quit", quitStyle);
 
         quitButton.addListener(
             (Event e) ->

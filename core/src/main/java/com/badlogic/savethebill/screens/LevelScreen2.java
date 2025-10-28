@@ -59,6 +59,12 @@ public class LevelScreen2 extends BaseScreen {
     private static final float DAMAGE_COOLDOWN = 1.0f;
     private GameSettings gameSettings;
 
+    private java.util.Set<String> destroyedObjects = new java.util.HashSet<>();
+    private boolean loadFromSave = false;
+    private float savedHeroX = -1;
+    private float savedHeroY = -1;
+    private boolean treasureOpened = false;
+
     public LevelScreen2() {
         this(3, 5, 3);
     }
@@ -67,6 +73,26 @@ public class LevelScreen2 extends BaseScreen {
         this.health = health;
         this.coins = coins;
         this.arrows = arrows;
+    }
+
+    public LevelScreen2(int health, int coins, int arrows, String destroyedObjects,
+                       boolean treasureOpened, float heroX, float heroY) {
+        this.health = health;
+        this.coins = coins;
+        this.arrows = arrows;
+        this.treasureOpened = treasureOpened;
+        this.loadFromSave = true;
+        this.savedHeroX = heroX;
+        this.savedHeroY = heroY;
+
+        if (destroyedObjects != null && !destroyedObjects.isEmpty()) {
+            String[] objects = destroyedObjects.split(",");
+            for (String obj : objects) {
+                if (!obj.trim().isEmpty()) {
+                    this.destroyedObjects.add(obj.trim());
+                }
+            }
+        }
     }
 
     public void initialize() {
@@ -299,8 +325,8 @@ public class LevelScreen2 extends BaseScreen {
                 System.out.println("Win condition met! Transitioning to LevelScreen3");
                 instrumental.stop();
                 windSurf.stop();
-                // Auto-save progress when transitioning to next level
-                SaveManager.getInstance().autoSave(3, health, coins, arrows);
+                SaveManager.getInstance().saveGameWithFullState(3, health, coins, arrows,
+                    getDestroyedObjects(), win, mainCharacter.getX(), mainCharacter.getY());
                 BaseGame.setActiveScreen(new LevelScreen3(health, coins, arrows));
             }
         }
@@ -471,6 +497,10 @@ public class LevelScreen2 extends BaseScreen {
 
     public int getArrows() {
         return arrows;
+    }
+
+    public IcyHeroMovement getHero() {
+        return mainCharacter;
     }
 
     public String getDestroyedObjects() {

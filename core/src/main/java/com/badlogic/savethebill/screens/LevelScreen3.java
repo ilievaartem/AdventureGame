@@ -46,8 +46,8 @@ public class LevelScreen3 extends BaseScreen {
     private Sound damageSound;
     private Sound meleeSound;
     private Sound shootSound;
-    private Sound hitPrisonSound; // Додаємо звук для удару по клітці
-    private Sound destroyPrisonSound; // Додаємо звук для руйнування клітки
+    private Sound hitPrisonSound;
+    private Sound destroyPrisonSound;
     private Music instrumental;
     private Music windSurf;
     private float timeSinceVictory = 0;
@@ -58,6 +58,12 @@ public class LevelScreen3 extends BaseScreen {
     private float orcDamageTimer;
     private GameSettings gameSettings;
 
+    private java.util.Set<String> destroyedObjects = new java.util.HashSet<>();
+    private boolean loadFromSave = false;
+    private float savedHeroX = -1;
+    private float savedHeroY = -1;
+    private boolean treasureOpened = false;
+
     public LevelScreen3() {
         this(3, 5, 3);
     }
@@ -67,6 +73,27 @@ public class LevelScreen3 extends BaseScreen {
         this.coins = coins;
         this.arrows = arrows;
         this.orcDamageTimer = 0f;
+    }
+
+    public LevelScreen3(int health, int coins, int arrows, String destroyedObjects,
+                       boolean treasureOpened, float heroX, float heroY) {
+        this.health = health;
+        this.coins = coins;
+        this.arrows = arrows;
+        this.treasureOpened = treasureOpened;
+        this.loadFromSave = true;
+        this.savedHeroX = heroX;
+        this.savedHeroY = heroY;
+        this.orcDamageTimer = 0f;
+
+        if (destroyedObjects != null && !destroyedObjects.isEmpty()) {
+            String[] objects = destroyedObjects.split(",");
+            for (String obj : objects) {
+                if (!obj.trim().isEmpty()) {
+                    this.destroyedObjects.add(obj.trim());
+                }
+            }
+        }
     }
 
     public void initialize() {
@@ -490,6 +517,10 @@ public class LevelScreen3 extends BaseScreen {
 
     public int getArrows() {
         return arrows;
+    }
+
+    public Hero getHero() {
+        return mainCharacter;
     }
 
     public String getDestroyedObjects() {

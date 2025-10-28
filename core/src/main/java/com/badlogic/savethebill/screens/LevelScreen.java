@@ -71,6 +71,10 @@ public class LevelScreen extends BaseScreen {
     private GameSettings gameSettings;
 
     private java.util.Set<String> destroyedObjects = new java.util.HashSet<>();
+    private String savedDestroyedObjects = "";
+    private boolean loadFromSave = false;
+    private float savedHeroX = -1;
+    private float savedHeroY = -1;
 
     public LevelScreen() {
         this.health = 3;
@@ -82,6 +86,28 @@ public class LevelScreen extends BaseScreen {
         this.health = health;
         this.coins = coins;
         this.arrows = arrows;
+    }
+
+    public LevelScreen(int health, int coins, int arrows, String destroyedObjects,
+                      boolean treasureOpened, float heroX, float heroY) {
+        this.health = health;
+        this.coins = coins;
+        this.arrows = arrows;
+        this.treasureOpened = treasureOpened;
+        this.savedDestroyedObjects = destroyedObjects;
+        this.loadFromSave = true;
+        this.savedHeroX = heroX;
+        this.savedHeroY = heroY;
+
+        // Parse destroyed objects
+        if (destroyedObjects != null && !destroyedObjects.isEmpty()) {
+            String[] objects = destroyedObjects.split(",");
+            for (String obj : objects) {
+                if (!obj.trim().isEmpty()) {
+                    this.destroyedObjects.add(obj.trim());
+                }
+            }
+        }
     }
 
     public void initialize() {
@@ -197,6 +223,67 @@ public class LevelScreen extends BaseScreen {
         shootSound = Gdx.audio.newSound(Gdx.files.internal("Shoot_2.ogg"));
 
         controlHUD.initializeLevelMusic("Music_Peaceful_Village.ogg");
+
+        if (loadFromSave) {
+            restoreWorldState();
+        }
+    }
+
+    private void restoreWorldState() {
+        if (savedHeroX >= 0 && savedHeroY >= 0) {
+            hero.setPosition(savedHeroX, savedHeroY);
+        }
+
+        for (String destroyedId : destroyedObjects) {
+            if (destroyedId.startsWith("bush_")) {
+                String[] parts = destroyedId.replace("bush_", "").split("_");
+                if (parts.length == 2) {
+                    try {
+                        int x = Integer.parseInt(parts[0]);
+                        int y = Integer.parseInt(parts[1]);
+                        removeObjectAt(x, y, "com.badlogic.savethebill.objects.Bush");
+                    } catch (NumberFormatException e) {
+                        System.err.println("Error parsing bush coordinates: " + destroyedId);
+                    }
+                }
+            } else if (destroyedId.startsWith("flyer_")) {
+                String[] parts = destroyedId.replace("flyer_", "").split("_");
+                if (parts.length == 2) {
+                    try {
+                        int x = Integer.parseInt(parts[0]);
+                        int y = Integer.parseInt(parts[1]);
+                        removeObjectAt(x, y, "com.badlogic.savethebill.characters.Flyer");
+                    } catch (NumberFormatException e) {
+                        System.err.println("Error parsing flyer coordinates: " + destroyedId);
+                    }
+                }
+            } else if (destroyedId.startsWith("coin_")) {
+                String[] parts = destroyedId.replace("coin_", "").split("_");
+                if (parts.length == 2) {
+                    try {
+                        int x = Integer.parseInt(parts[0]);
+                        int y = Integer.parseInt(parts[1]);
+                        removeObjectAt(x, y, "com.badlogic.savethebill.objects.Coin");
+                    } catch (NumberFormatException e) {
+                        System.err.println("Error parsing coin coordinates: " + destroyedId);
+                    }
+                }
+            }
+        }
+
+        if (treasureOpened) {
+            Animation<TextureRegion> openAnimation = treasure.loadTexture("open-treasure-chest.png");
+            treasure.setAnimation(openAnimation);
+        }
+    }
+
+    private void removeObjectAt(int x, int y, String className) {
+        for (BaseActor actor : BaseActor.getList(mainStage, className)) {
+            if (Math.abs(actor.getX() - x) < 5 && Math.abs(actor.getY() - y) < 5) {
+                actor.remove();
+                break;
+            }
+        }
     }
 
     public void update(float dt) {
@@ -242,7 +329,6 @@ public class LevelScreen extends BaseScreen {
             if (sword.isVisible()) {
                 for (BaseActor bush : BaseActor.getList(mainStage, "com.badlogic.savethebill.objects.Bush")) {
                     if (sword.overlaps(bush)) {
-                        // Track destroyed bush position
                         String bushId = "bush_" + (int)bush.getX() + "_" + (int)bush.getY();
                         destroyedObjects.add(bushId);
                         bush.remove();
@@ -251,7 +337,6 @@ public class LevelScreen extends BaseScreen {
 
                 for (BaseActor flyer : BaseActor.getList(mainStage, "com.badlogic.savethebill.characters.Flyer")) {
                     if (sword.overlaps(flyer)) {
-                        // Track destroyed flyer position
                         String flyerId = "flyer_" + (int)flyer.getX() + "_" + (int)flyer.getY();
                         destroyedObjects.add(flyerId);
                         flyer.remove();
@@ -268,6 +353,8 @@ public class LevelScreen extends BaseScreen {
 
             for (BaseActor coin : BaseActor.getList(mainStage, "com.badlogic.savethebill.objects.Coin")) {
                 if (hero.overlaps(coin)) {
+                    String coinId = "coin_" + (int)coin.getX() + "_" + (int)coin.getY();
+                    destroyedObjects.add(coinId);
                     coin.remove();
                     coins++;
                     if (!controlHUD.isMuted()) {
@@ -398,8 +485,8 @@ public class LevelScreen extends BaseScreen {
 
             if (treasureOpened && hero.getY() <= 0) {
                 controlHUD.dispose();
-                // Auto-save progress when transitioning to next level
-                SaveManager.getInstance().autoSave(2, health, coins, arrows);
+                SaveManager.getInstance().saveGameWithFullState(2, health, coins, arrows,
+                    getDestroyedObjects(), treasureOpened, hero.getX(), hero.getY());
                 BaseGame.setActiveScreen(new LevelScreen2(health, coins, arrows));
             }
 
@@ -580,7 +667,6 @@ public class LevelScreen extends BaseScreen {
         return controlHUD;
     }
 
-    // Getter methods for save system
     public int getHealth() {
         return health;
     }
@@ -593,7 +679,10 @@ public class LevelScreen extends BaseScreen {
         return arrows;
     }
 
-    // Methods for world state saving
+    public Hero getHero() {
+        return hero;
+    }
+
     public String getDestroyedObjects() {
         return String.join(",", destroyedObjects);
     }

@@ -147,6 +147,7 @@ public class PauseScreen extends BaseScreen {
         Label warningLabel = new Label(warningText, BaseGame.labelStyle);
         warningLabel.setColor(Color.YELLOW);
         warningLabel.setFontScale(1.0f);
+        warningLabel.setWrap(true);
 
         TextButton.TextButtonStyle buttonStyle = createButtonStyle();
 
@@ -168,12 +169,14 @@ public class PauseScreen extends BaseScreen {
         });
 
         uiTable.center();
-        uiTable.add(confirmTitle).padBottom(30);
+        uiTable.add(confirmTitle).padBottom(30).center();
         uiTable.row();
-        uiTable.add(warningLabel).padBottom(40);
+        uiTable.add(warningLabel).width(400).padBottom(40).center();
         uiTable.row();
-        uiTable.add(yesButton).width(150).height(60).padRight(20);
-        uiTable.add(noButton).width(150).height(60).padLeft(20);
+        com.badlogic.gdx.scenes.scene2d.ui.Table buttonTable = new com.badlogic.gdx.scenes.scene2d.ui.Table();
+        buttonTable.add(yesButton).width(120).height(50).padRight(10);
+        buttonTable.add(noButton).width(120).height(50).padLeft(10);
+        uiTable.add(buttonTable).center();
     }
 
     private void saveGameProgress() {
@@ -183,8 +186,10 @@ public class PauseScreen extends BaseScreen {
         int arrows = getCurrentArrows();
         String destroyedObjects = getCurrentDestroyedObjects();
         boolean treasureOpened = getCurrentTreasureOpened();
+        float heroX = getCurrentHeroX();
+        float heroY = getCurrentHeroY();
 
-        saveManager.saveGameWithState(currentLevel, health, coins, arrows, destroyedObjects, treasureOpened);
+        saveManager.saveGameWithFullState(currentLevel, health, coins, arrows, destroyedObjects, treasureOpened, heroX, heroY);
         hasUnsavedProgress = false;
 
         uiTable.clear();
@@ -271,6 +276,28 @@ public class PauseScreen extends BaseScreen {
             return ((LevelScreen3) gameScreen).isTreasureOpened();
         }
         return false;
+    }
+
+    private float getCurrentHeroX() {
+        if (gameScreen instanceof LevelScreen) {
+            return ((LevelScreen) gameScreen).getHero().getX();
+        } else if (gameScreen instanceof LevelScreen2) {
+            return ((LevelScreen2) gameScreen).getHero().getX();
+        } else if (gameScreen instanceof LevelScreen3) {
+            return ((LevelScreen3) gameScreen).getHero().getX();
+        }
+        return 0;
+    }
+
+    private float getCurrentHeroY() {
+        if (gameScreen instanceof LevelScreen) {
+            return ((LevelScreen) gameScreen).getHero().getY();
+        } else if (gameScreen instanceof LevelScreen2) {
+            return ((LevelScreen2) gameScreen).getHero().getY();
+        } else if (gameScreen instanceof LevelScreen3) {
+            return ((LevelScreen3) gameScreen).getHero().getY();
+        }
+        return 0;
     }
 
     public void showSoundRestartHint() {

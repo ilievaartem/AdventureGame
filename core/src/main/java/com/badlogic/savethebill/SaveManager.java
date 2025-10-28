@@ -20,6 +20,8 @@ public class SaveManager {
     private static final String SAVE_TIMESTAMP_KEY = "saveTimestamp";
     private static final String DESTROYED_OBJECTS_KEY = "destroyedObjects";
     private static final String TREASURE_OPENED_KEY = "treasureOpened";
+    private static final String HERO_X_KEY = "heroX";
+    private static final String HERO_Y_KEY = "heroY";
 
     private SaveManager() {
         savePrefs = Gdx.app.getPreferences(SAVE_FILE);
@@ -48,6 +50,12 @@ public class SaveManager {
 
     public void saveGameWithState(int currentLevel, int health, int coins, int arrows,
                                  String destroyedObjects, boolean treasureOpened) {
+        saveGameWithFullState(currentLevel, health, coins, arrows, destroyedObjects, treasureOpened, -1, -1);
+    }
+
+    public void saveGameWithFullState(int currentLevel, int health, int coins, int arrows,
+                                     String destroyedObjects, boolean treasureOpened,
+                                     float heroX, float heroY) {
         savePrefs.putBoolean(HAS_SAVE_KEY, true);
         savePrefs.putInteger(CURRENT_LEVEL_KEY, currentLevel);
         savePrefs.putInteger(PLAYER_HEALTH_KEY, health);
@@ -55,6 +63,8 @@ public class SaveManager {
         savePrefs.putInteger(PLAYER_ARROWS_KEY, arrows);
         savePrefs.putString(DESTROYED_OBJECTS_KEY, destroyedObjects);
         savePrefs.putBoolean(TREASURE_OPENED_KEY, treasureOpened);
+        savePrefs.putFloat(HERO_X_KEY, heroX);
+        savePrefs.putFloat(HERO_Y_KEY, heroY);
         savePrefs.putLong(SAVE_TIMESTAMP_KEY, System.currentTimeMillis());
         savePrefs.flush();
     }
@@ -71,6 +81,8 @@ public class SaveManager {
         saveData.arrows = savePrefs.getInteger(PLAYER_ARROWS_KEY, 0);
         saveData.destroyedObjects = savePrefs.getString(DESTROYED_OBJECTS_KEY, "");
         saveData.treasureOpened = savePrefs.getBoolean(TREASURE_OPENED_KEY, false);
+        saveData.heroX = savePrefs.getFloat(HERO_X_KEY, -1);
+        saveData.heroY = savePrefs.getFloat(HERO_Y_KEY, -1);
         saveData.timestamp = savePrefs.getLong(SAVE_TIMESTAMP_KEY, 0);
 
         return saveData;
@@ -79,11 +91,17 @@ public class SaveManager {
     public BaseScreen createLevelScreen(GameSaveData saveData) {
         switch (saveData.currentLevel) {
             case 1:
-                return new LevelScreen(saveData.health, saveData.coins, saveData.arrows);
+                return new LevelScreen(saveData.health, saveData.coins, saveData.arrows,
+                                     saveData.destroyedObjects, saveData.treasureOpened,
+                                     saveData.heroX, saveData.heroY);
             case 2:
-                return new LevelScreen2(saveData.health, saveData.coins, saveData.arrows);
+                return new LevelScreen2(saveData.health, saveData.coins, saveData.arrows,
+                                      saveData.destroyedObjects, saveData.treasureOpened,
+                                      saveData.heroX, saveData.heroY);
             case 3:
-                return new LevelScreen3(saveData.health, saveData.coins, saveData.arrows);
+                return new LevelScreen3(saveData.health, saveData.coins, saveData.arrows,
+                                      saveData.destroyedObjects, saveData.treasureOpened,
+                                      saveData.heroX, saveData.heroY);
             default:
                 return new LevelScreen();
         }
@@ -106,5 +124,7 @@ public class SaveManager {
         public String destroyedObjects = "";
         public boolean treasureOpened = false;
         public long timestamp;
+        public float heroX;
+        public float heroY;
     }
 }
