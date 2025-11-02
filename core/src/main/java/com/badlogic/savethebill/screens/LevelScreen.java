@@ -12,6 +12,7 @@ import com.badlogic.gdx.maps.MapProperties;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.savethebill.BaseActor;
 import com.badlogic.savethebill.BaseGame;
 import com.badlogic.savethebill.BillGame;
@@ -30,7 +31,6 @@ import com.badlogic.savethebill.objects.Treasure;
 import com.badlogic.savethebill.visualelements.ControlHUD;
 import com.badlogic.savethebill.visualelements.DialogBox;
 import com.badlogic.savethebill.visualelements.InventoryHUD;
-import com.badlogic.savethebill.visualelements.MiniMap;
 import com.badlogic.savethebill.visualelements.ShopArrow;
 import com.badlogic.savethebill.visualelements.ShopHeart;
 import com.badlogic.savethebill.visualelements.Smoke;
@@ -48,6 +48,9 @@ public class LevelScreen extends BaseScreen {
     DialogBox dialogBox;
     BaseActor keyEIcon;
     boolean isNearShopItem;
+    private TextButton loadGameButton;
+    private TextButton mainMenuButton;
+    private boolean gameOverUICreated = false;
 
     Treasure treasure;
     ShopHeart shopHeart;
@@ -99,7 +102,6 @@ public class LevelScreen extends BaseScreen {
         this.savedHeroX = heroX;
         this.savedHeroY = heroY;
 
-        // Parse destroyed objects
         if (destroyedObjects != null && !destroyedObjects.isEmpty()) {
             String[] objects = destroyedObjects.split(",");
             for (String obj : objects) {
@@ -337,15 +339,20 @@ public class LevelScreen extends BaseScreen {
 
                 for (BaseActor flyer : BaseActor.getList(mainStage, "com.badlogic.savethebill.characters.Flyer")) {
                     if (sword.overlaps(flyer)) {
-                        String flyerId = "flyer_" + (int)flyer.getX() + "_" + (int)flyer.getY();
-                        destroyedObjects.add(flyerId);
-                        flyer.remove();
-                        Coin coin = new Coin(0, 0, mainStage);
-                        coin.centerAtActor(flyer);
-                        Smoke smoke = new Smoke(0, 0, mainStage);
-                        smoke.centerAtActor(flyer);
-                        if (!controlHUD.isMuted()) {
-                            flyerDeath.play(controlHUD.getEffectVolume());
+                        Flyer flyerEnemy = (Flyer) flyer;
+                        flyerEnemy.takeDamage(1, "sword");
+
+                        if (flyerEnemy.isDead()) {
+                            String flyerId = "flyer_" + (int)flyer.getX() + "_" + (int)flyer.getY();
+                            destroyedObjects.add(flyerId);
+                            flyer.remove();
+                            Coin coin = new Coin(0, 0, mainStage);
+                            coin.centerAtActor(flyer);
+                            Smoke smoke = new Smoke(0, 0, mainStage);
+                            smoke.centerAtActor(flyer);
+                            if (!controlHUD.isMuted()) {
+                                flyerDeath.play(controlHUD.getEffectVolume());
+                            }
                         }
                     }
                 }
@@ -491,6 +498,10 @@ public class LevelScreen extends BaseScreen {
             }
 
             if (health <= 0) {
+                if (!gameOverUICreated) {
+                    createGameOverUI();
+                    gameOverUICreated = true;
+                }
                 messageLabel.setText("Game over...");
                 messageLabel.setColor(Color.RED);
                 messageLabel.setFontScale(2);
@@ -502,14 +513,21 @@ public class LevelScreen extends BaseScreen {
             for (BaseActor arrow : BaseActor.getList(mainStage, "com.badlogic.savethebill.objects.Arrow")) {
                 for (BaseActor flyer : BaseActor.getList(mainStage, "com.badlogic.savethebill.characters.Flyer")) {
                     if (arrow.overlaps(flyer)) {
-                        flyer.remove();
-                        arrow.remove();
-                        Coin coin = new Coin(0, 0, mainStage);
-                        coin.centerAtActor(flyer);
-                        Smoke smoke = new Smoke(0, 0, mainStage);
-                        smoke.centerAtActor(flyer);
-                        if (!controlHUD.isMuted()) {
-                            flyerDeath.play(controlHUD.getEffectVolume());
+                        Flyer flyerEnemy = (Flyer) flyer;
+                        flyerEnemy.takeDamage(1, "arrow");
+
+                        if (flyerEnemy.isDead()) {
+                            flyer.remove();
+                            arrow.remove();
+                            Coin coin = new Coin(0, 0, mainStage);
+                            coin.centerAtActor(flyer);
+                            Smoke smoke = new Smoke(0, 0, mainStage);
+                            smoke.centerAtActor(flyer);
+                            if (!controlHUD.isMuted()) {
+                                flyerDeath.play(controlHUD.getEffectVolume());
+                            }
+                        } else {
+                            arrow.remove();
                         }
                     }
                 }
@@ -522,6 +540,68 @@ public class LevelScreen extends BaseScreen {
                         arrow.addAction(Actions.after(Actions.removeActor()));
                     }
                 }
+            }
+        } else {
+            updateLoadGameButtonStyle();
+        }
+    }
+
+    private void createGameOverUI() {
+        messageLabel.setVisible(true);
+
+        TextButton.TextButtonStyle loadGameStyle = new TextButton.TextButtonStyle(BaseGame.textButtonStyle);
+        TextButton.TextButtonStyle menuStyle = new TextButton.TextButtonStyle(BaseGame.textButtonStyle);
+        menuStyle.fontColor = Color.WHITE;
+
+        loadGameButton = new TextButton("Load Save", loadGameStyle);
+        loadGameButton.addListener(
+            (com.badlogic.gdx.scenes.scene2d.Event e) -> {
+                if (!(e instanceof com.badlogic.gdx.scenes.scene2d.InputEvent)) return false;
+
+                com.badlogic.gdx.scenes.scene2d.InputEvent ie = (com.badlogic.gdx.scenes.scene2d.InputEvent) e;
+                if (ie.getType().equals(com.badlogic.gdx.scenes.scene2d.InputEvent.Type.touchDown)) {
+                    if (SaveManager.getInstance().hasSavedGame()) {
+                        controlHUD.dispose();
+                        SaveManager.getInstance().loadGame();
+                    }
+                    return true;
+                }
+                return false;
+            }
+        );
+
+        mainMenuButton = new TextButton("Menu", menuStyle);
+        mainMenuButton.addListener(
+            (com.badlogic.gdx.scenes.scene2d.Event e) -> {
+                if (!(e instanceof com.badlogic.gdx.scenes.scene2d.InputEvent)) return false;
+
+                com.badlogic.gdx.scenes.scene2d.InputEvent ie = (com.badlogic.gdx.scenes.scene2d.InputEvent) e;
+                if (ie.getType().equals(com.badlogic.gdx.scenes.scene2d.InputEvent.Type.touchDown)) {
+                    controlHUD.dispose();
+                    BaseGame.setActiveScreen(new MenuScreen());
+                    return true;
+                }
+                return false;
+            }
+        );
+
+        updateLoadGameButtonStyle();
+
+        uiTable.row();
+        uiTable.add().expandX().fillX();
+        uiTable.add(loadGameButton).pad(10);
+        uiTable.add(mainMenuButton).pad(10);
+        uiTable.add().expandX().fillX();
+    }
+
+    private void updateLoadGameButtonStyle() {
+        if (loadGameButton != null) {
+            if (!SaveManager.getInstance().hasSavedGame()) {
+                loadGameButton.setDisabled(true);
+                loadGameButton.getStyle().fontColor = Color.GRAY;
+            } else {
+                loadGameButton.setDisabled(false);
+                loadGameButton.getStyle().fontColor = Color.WHITE;
             }
         }
     }
@@ -582,13 +662,13 @@ public class LevelScreen extends BaseScreen {
     }
 
     public boolean keyDown(int keycode) {
-        if (gameOver)
-            return false;
-
         if (keycode == Keys.ESCAPE) {
             BillGame.setActiveScreen(new PauseScreen(this, LevelScreen.class, controlHUD.isMuted()));
             return true;
         }
+
+        if (gameOver)
+            return false;
 
         if (keycode == Keys.F) {
             if (isFullscreen) {

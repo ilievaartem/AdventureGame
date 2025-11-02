@@ -45,7 +45,7 @@ public class Orc extends BaseActor {
         super(x, y, s);
         this.target = target;
         this.state = State.WALKING;
-        this.health = 3;
+        this.health = 5;
         this.walkSpeed = 50f;
         this.visionRadius = 300f;
         this.attackRadius = 80f;
@@ -165,10 +165,20 @@ public class Orc extends BaseActor {
         ));
     }
 
-    public void takeDamage() {
-        if (state == State.DYING || state == State.DEAD) return;
+    public void takeDamage(int damage, String damageType) {
+        if (state == State.DEAD || state == State.DYING) return;
 
-        health--;
+        int actualDamage = damage;
+
+        if (damageType.equals("sword")) {
+            actualDamage = 2;
+        } else if (damageType.equals("arrow")) {
+            actualDamage = MathUtils.random(1, 3);
+        }
+
+        health -= actualDamage;
+
+        clearActions();
         addAction(Actions.sequence(
             Actions.color(Color.RED, 0.2f),
             Actions.color(Color.WHITE, 0.2f)
@@ -231,6 +241,14 @@ public class Orc extends BaseActor {
 
     public boolean isAttacking() {
         return state == State.ATTACKING;
+    }
+
+    public boolean isDead() {
+        return state == State.DEAD;
+    }
+
+    public int getHealth() {
+        return health;
     }
 
     public float getAttackRadius() {

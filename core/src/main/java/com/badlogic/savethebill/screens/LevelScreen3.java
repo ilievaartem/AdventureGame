@@ -10,10 +10,13 @@ import com.badlogic.gdx.maps.MapObject;
 import com.badlogic.gdx.maps.MapProperties;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.savethebill.BaseActor;
 import com.badlogic.savethebill.BaseGame;
 import com.badlogic.savethebill.BillGame;
 import com.badlogic.savethebill.GameSettings;
+import com.badlogic.savethebill.characters.Flyer;
 import com.badlogic.savethebill.characters.Hero;
 import com.badlogic.savethebill.characters.NPC;
 import com.badlogic.savethebill.characters.NPCDog;
@@ -31,6 +34,7 @@ import com.badlogic.savethebill.visualelements.DialogBox;
 import com.badlogic.savethebill.visualelements.InventoryHUD;
 import com.badlogic.savethebill.visualelements.TilemapActor;
 import com.badlogic.savethebill.visualelements.Whirlpool;
+import com.badlogic.savethebill.SaveManager;
 
 public class LevelScreen3 extends BaseScreen {
     private Hero mainCharacter;
@@ -57,6 +61,10 @@ public class LevelScreen3 extends BaseScreen {
     private static final float ORC_DAMAGE_COOLDOWN = 1.0f;
     private float orcDamageTimer;
     private GameSettings gameSettings;
+    private TextButton loadGameButton;
+    private TextButton mainMenuButton;
+    private boolean gameOverUICreated = false;
+    private Label messageLabel;
 
     private java.util.Set<String> destroyedObjects = new java.util.HashSet<>();
     private boolean loadFromSave = false;
@@ -179,6 +187,74 @@ public class LevelScreen3 extends BaseScreen {
         windSurf.setLooping(true);
         windSurf.setVolume(controlHUD.getWindVolume());
         windSurf.play();
+
+        messageLabel = new Label("Game over...", BaseGame.labelStyle);
+        messageLabel.setVisible(false);
+        messageLabel.setColor(Color.RED);
+        messageLabel.setFontScale(2);
+
+        uiTable.pad(20);
+        uiTable.add(messageLabel).colspan(8).expandX().expandY();
+    }
+
+    private void createGameOverUI() {
+        messageLabel.setVisible(true);
+
+        TextButton.TextButtonStyle loadGameStyle = new TextButton.TextButtonStyle(BaseGame.textButtonStyle);
+        TextButton.TextButtonStyle menuStyle = new TextButton.TextButtonStyle(BaseGame.textButtonStyle);
+        menuStyle.fontColor = Color.WHITE;
+
+        loadGameButton = new TextButton("Load Save", loadGameStyle);
+        loadGameButton.addListener(
+            (com.badlogic.gdx.scenes.scene2d.Event e) -> {
+                if (!(e instanceof com.badlogic.gdx.scenes.scene2d.InputEvent)) return false;
+
+                com.badlogic.gdx.scenes.scene2d.InputEvent ie = (com.badlogic.gdx.scenes.scene2d.InputEvent) e;
+                if (ie.getType().equals(com.badlogic.gdx.scenes.scene2d.InputEvent.Type.touchDown)) {
+                    if (SaveManager.getInstance().hasSavedGame()) {
+                        controlHUD.dispose();
+                        SaveManager.getInstance().loadGame();
+                    }
+                    return true;
+                }
+                return false;
+            }
+        );
+
+        mainMenuButton = new TextButton("Menu", menuStyle);
+        mainMenuButton.addListener(
+            (com.badlogic.gdx.scenes.scene2d.Event e) -> {
+                if (!(e instanceof com.badlogic.gdx.scenes.scene2d.InputEvent)) return false;
+
+                com.badlogic.gdx.scenes.scene2d.InputEvent ie = (com.badlogic.gdx.scenes.scene2d.InputEvent) e;
+                if (ie.getType().equals(com.badlogic.gdx.scenes.scene2d.InputEvent.Type.touchDown)) {
+                    controlHUD.dispose();
+                    BaseGame.setActiveScreen(new MenuScreen());
+                    return true;
+                }
+                return false;
+            }
+        );
+
+        updateLoadGameButtonStyle();
+
+        uiTable.row();
+        uiTable.add().expandX().fillX(); // Empty spacer
+        uiTable.add(loadGameButton).pad(10);
+        uiTable.add(mainMenuButton).pad(10);
+        uiTable.add().expandX().fillX(); // Empty spacer
+    }
+
+    private void updateLoadGameButtonStyle() {
+        if (loadGameButton != null) {
+            if (!SaveManager.getInstance().hasSavedGame()) {
+                loadGameButton.setDisabled(true);
+                loadGameButton.getStyle().fontColor = Color.GRAY;
+            } else {
+                loadGameButton.setDisabled(false);
+                loadGameButton.getStyle().fontColor = Color.WHITE;
+            }
+        }
     }
 
     public void update(float dt) {
@@ -234,10 +310,22 @@ public class LevelScreen3 extends BaseScreen {
                     whirl.setOpacity(0.25f);
                 }
             }
+
             for (BaseActor orcActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.characters.Orc")) {
                 Orc orc = (Orc) orcActor;
                 if (sword.overlaps(orc)) {
-                    orc.takeDamage();
+                    orc.takeDamage(2, "sword");
+                }
+            }
+
+            for (BaseActor flyerActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.characters.Flyer")) {
+                Flyer flyer = (Flyer) flyerActor;
+                if (sword.overlaps(flyer)) {
+                    flyer.takeDamage(1, "sword");
+
+                    if (flyer.isDead()) {
+                        flyer.remove();
+                    }
                 }
             }
         }
@@ -258,13 +346,28 @@ public class LevelScreen3 extends BaseScreen {
                     arrow.remove();
                 }
             }
+
             for (BaseActor orcActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.characters.Orc")) {
                 Orc orc = (Orc) orcActor;
                 if (arrow.overlaps(orc)) {
-                    orc.takeDamage();
+                    orc.takeDamage(1, "arrow"); // Random 1-3 damage from arrow to Orc (handled in Orc class)
                     arrow.remove();
                 }
             }
+
+            for (BaseActor flyerActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.characters.Flyer")) {
+                Flyer flyer = (Flyer) flyerActor;
+                if (arrow.overlaps(flyer)) {
+                    flyer.takeDamage(1, "arrow");
+                    if (flyer.isDead()) {
+                        flyer.remove();
+                        arrow.remove();
+                    } else {
+                        arrow.remove();
+                    }
+                }
+            }
+
             for (BaseActor rockActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.objects.Rock")) {
                 if (arrow.overlaps(rockActor)) {
                     arrow.remove();
@@ -272,45 +375,12 @@ public class LevelScreen3 extends BaseScreen {
             }
         }
 
-        for (BaseActor npcActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.characters.NPC")) {
-            NPC npc = (NPC) npcActor;
-            if (npc.getID() == null && mainCharacter.overlaps(npc) && !npc.collected && !isTrapped(npc)) {
-                npc.collected = true;
-                pickUp.play(DROP_VOLUME * audioVolume);
-                npc.clearActions();
-                npc.addAction(Actions.fadeOut(1));
-                npc.addAction(Actions.after(Actions.removeActor()));
-
-                Whirlpool whirl = new Whirlpool(0, 0, mainStage);
-                whirl.centerAtActor(npc);
-                whirl.setOpacity(0.25f);
-            }
-        }
-
-        controlHUD.updateNpcLabel(BaseActor.count(mainStage, "com.badlogic.savethebill.characters.NPC"));
-
-        for (BaseActor signActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.objects.Sign")) {
-            Sign sign = (Sign) signActor;
-            mainCharacter.preventOverlap(sign);
-            boolean nearby = mainCharacter.isWithinDistance(4, sign);
-            if (nearby && !sign.isViewing()) {
-                dialogBox.setText(sign.getText());
-                dialogBox.setVisible(true);
-                sign.setViewing(true);
-            }
-            if (sign.isViewing() && !nearby) {
-                dialogBox.setText(" ");
-                dialogBox.setVisible(false);
-                sign.setViewing(false);
-            }
-        }
-
+        // Updated Orc damage to player
         for (BaseActor orcActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.characters.Orc")) {
             Orc orc = (Orc) orcActor;
-            float distanceToHero = orc.distanceTo(mainCharacter);
-            if (orc.isAttacking() && distanceToHero <= orc.getAttackRadius() && !gameOver && !win && orcDamageTimer >= ORC_DAMAGE_COOLDOWN) {
+            if (orc.isAttacking() && orc.overlaps(mainCharacter) && orcDamageTimer <= 0) {
                 health--;
-                orcDamageTimer = 0f;
+                orcDamageTimer = ORC_DAMAGE_COOLDOWN;
                 mainCharacter.clearActions();
                 mainCharacter.addAction(Actions.sequence(
                     Actions.color(Color.RED, 0.2f),
@@ -319,22 +389,14 @@ public class LevelScreen3 extends BaseScreen {
                 if (!controlHUD.isMuted()) {
                     damageSound.play(controlHUD.getEffectVolume());
                 }
+
                 if (health <= 0) {
+                    if (!gameOverUICreated) {
+                        createGameOverUI();
+                        gameOverUICreated = true;
+                    }
                     gameOver = true;
                     mainCharacter.remove();
-
-                    BaseActor gameOverMessage = new BaseActor(0, 0, mainStage);
-                    gameOverMessage.loadTexture("game-over.png");
-                    gameOverMessage.centerAtPosition(mainStage.getCamera().position.x, mainStage.getCamera().position.y);
-                    gameOverMessage.setOpacity(0);
-                    gameOverMessage.addAction(Actions.fadeIn(1));
-                } else {
-                    mainCharacter.preventOverlap(orc);
-                    Vector2 heroPosition = new Vector2(mainCharacter.getX(), mainCharacter.getY());
-                    Vector2 orcPosition = new Vector2(orc.getX(), orc.getY());
-                    Vector2 hitVector = heroPosition.sub(orcPosition);
-                    mainCharacter.setMotionAngle(hitVector.angle());
-                    mainCharacter.setSpeed(100);
                 }
             }
         }
@@ -358,6 +420,8 @@ public class LevelScreen3 extends BaseScreen {
                 BaseGame.setActiveScreen(new MenuScreen());
                 System.out.println("Transitioning to MenuScreen after 2 seconds.");
             }
+        } else if (gameOver) {
+            updateLoadGameButtonStyle();
         }
     }
 
@@ -499,11 +563,37 @@ public class LevelScreen3 extends BaseScreen {
         }
     }
 
-    public boolean keyDown(int keyCode) {
-        if (keyCode == Keys.ESCAPE) {
+    public boolean keyDown(int keycode) {
+        if (keycode == Keys.ESCAPE) {
             BillGame.setActiveScreen(new PauseScreen(this, LevelScreen3.class, controlHUD.isMuted()));
             return true;
         }
+
+        if (gameOver)
+            return false;
+
+        if (keycode == Keys.W)
+            mainCharacter.accelerateAtAngle(90);
+        if (keycode == Keys.S)
+            mainCharacter.accelerateAtAngle(270);
+        if (keycode == Keys.A)
+            mainCharacter.accelerateAtAngle(180);
+        if (keycode == Keys.D)
+            mainCharacter.accelerateAtAngle(0);
+
+        if (Gdx.input.isKeyPressed(Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Keys.SHIFT_RIGHT)) {
+            mainCharacter.setMaxSpeed(200);
+        } else {
+            mainCharacter.setMaxSpeed(100);
+        }
+
+        if (Gdx.input.isButtonJustPressed(Buttons.LEFT)) {
+            swingSword();
+        }
+        if (Gdx.input.isButtonJustPressed(Buttons.RIGHT)) {
+            shootArrow();
+        }
+
         return false;
     }
 
@@ -531,7 +621,6 @@ public class LevelScreen3 extends BaseScreen {
     }
 
     public boolean isTreasureOpened() {
-        // LevelScreen3 doesn't have treasures, but we track if level is completed (all NPCs collected)
         return win;
     }
 }

@@ -17,10 +17,13 @@ public class Spider extends BaseActor {
     private static final float WALK_SPEED = 80f;
     private static final float ATTACK_SPEED = 150f;
     private IcyHeroMovement target;
+    private int health;
+    private static final int MAX_HEALTH = 1;
 
     public Spider(float x, float y, Stage s, IcyHeroMovement target) {
         super(x, y, s);
         this.target = target;
+        this.health = MAX_HEALTH;
 
         walkAnimation = loadAnimationFromSheet("spider_walk.png", 1, 4, 0.2f, true);
         jumpAnimation = loadAnimationFromSheet("spider_jump.png", 1, 3, 0.15f, true);
@@ -37,10 +40,8 @@ public class Spider extends BaseActor {
         attackCooldown = 0;
     }
 
-    @Override
     public void act(float dt) {
         super.act(dt);
-
         attackCooldown -= dt;
 
         float distanceToTarget = getDistanceToTarget();
@@ -50,6 +51,7 @@ public class Spider extends BaseActor {
             setSpeed(ATTACK_SPEED);
             float angle = calculateAngleToTarget();
             setMotionAngle(angle);
+            attackCooldown = ATTACK_COOLDOWN;
         } else if (state == State.ATTACKING && distanceToTarget > VISION_RADIUS) {
             state = State.WALKING;
             setAnimation(walkAnimation);
@@ -70,6 +72,16 @@ public class Spider extends BaseActor {
         boundToWorld();
     }
 
+    public void takeDamage(int damage, String damageType) {
+        if (isDead()) return;
+
+        health -= damage;
+    }
+
+    public void resetAttackCooldown() {
+        attackCooldown = ATTACK_COOLDOWN;
+    }
+
     private float getDistanceToTarget() {
         if (target == null) return Float.MAX_VALUE;
         float dx = target.getX() + target.getWidth() / 2 - (getX() + getWidth() / 2);
@@ -88,7 +100,11 @@ public class Spider extends BaseActor {
         return state == State.ATTACKING;
     }
 
-    public void resetAttackCooldown() {
-        attackCooldown = ATTACK_COOLDOWN;
+    public boolean isDead() {
+        return health <= 0;
+    }
+
+    public int getHealth() {
+        return health;
     }
 }

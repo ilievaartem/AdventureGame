@@ -12,6 +12,8 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.savethebill.BaseActor;
 import com.badlogic.savethebill.BaseGame;
 import com.badlogic.savethebill.BillGame;
@@ -58,6 +60,10 @@ public class LevelScreen2 extends BaseScreen {
     private HashMap<Spider, Float> spiderDamageCooldowns;
     private static final float DAMAGE_COOLDOWN = 1.0f;
     private GameSettings gameSettings;
+    private TextButton loadGameButton;
+    private TextButton mainMenuButton;
+    private boolean gameOverUICreated = false;
+    private Label messageLabel;
 
     private java.util.Set<String> destroyedObjects = new java.util.HashSet<>();
     private boolean loadFromSave = false;
@@ -162,6 +168,74 @@ public class LevelScreen2 extends BaseScreen {
         windSurf.play();
 
         spiderDamageCooldowns = new HashMap<>();
+
+        messageLabel = new Label("Game over...", BaseGame.labelStyle);
+        messageLabel.setVisible(false);
+        messageLabel.setColor(Color.RED);
+        messageLabel.setFontScale(2);
+
+        uiTable.pad(20);
+        uiTable.add(messageLabel).colspan(8).expandX().expandY();
+    }
+
+    private void createGameOverUI() {
+        messageLabel.setVisible(true);
+
+        TextButton.TextButtonStyle loadGameStyle = new TextButton.TextButtonStyle(BaseGame.textButtonStyle);
+        TextButton.TextButtonStyle menuStyle = new TextButton.TextButtonStyle(BaseGame.textButtonStyle);
+        menuStyle.fontColor = Color.WHITE;
+
+        loadGameButton = new TextButton("Load Save", loadGameStyle);
+        loadGameButton.addListener(
+            (com.badlogic.gdx.scenes.scene2d.Event e) -> {
+                if (!(e instanceof com.badlogic.gdx.scenes.scene2d.InputEvent)) return false;
+
+                com.badlogic.gdx.scenes.scene2d.InputEvent ie = (com.badlogic.gdx.scenes.scene2d.InputEvent) e;
+                if (ie.getType().equals(com.badlogic.gdx.scenes.scene2d.InputEvent.Type.touchDown)) {
+                    if (SaveManager.getInstance().hasSavedGame()) {
+                        controlHUD.dispose();
+                        SaveManager.getInstance().loadGame();
+                    }
+                    return true;
+                }
+                return false;
+            }
+        );
+
+        mainMenuButton = new TextButton("Menu", menuStyle);
+        mainMenuButton.addListener(
+            (com.badlogic.gdx.scenes.scene2d.Event e) -> {
+                if (!(e instanceof com.badlogic.gdx.scenes.scene2d.InputEvent)) return false;
+
+                com.badlogic.gdx.scenes.scene2d.InputEvent ie = (com.badlogic.gdx.scenes.scene2d.InputEvent) e;
+                if (ie.getType().equals(com.badlogic.gdx.scenes.scene2d.InputEvent.Type.touchDown)) {
+                    controlHUD.dispose();
+                    BaseGame.setActiveScreen(new MenuScreen());
+                    return true;
+                }
+                return false;
+            }
+        );
+
+        updateLoadGameButtonStyle();
+
+        uiTable.row();
+        uiTable.add().expandX().fillX(); // Empty spacer
+        uiTable.add(loadGameButton).pad(10);
+        uiTable.add(mainMenuButton).pad(10);
+        uiTable.add().expandX().fillX(); // Empty spacer
+    }
+
+    private void updateLoadGameButtonStyle() {
+        if (loadGameButton != null) {
+            if (!SaveManager.getInstance().hasSavedGame()) {
+                loadGameButton.setDisabled(true);
+                loadGameButton.getStyle().fontColor = Color.GRAY;
+            } else {
+                loadGameButton.setDisabled(false);
+                loadGameButton.getStyle().fontColor = Color.WHITE;
+            }
+        }
     }
 
     @Override
@@ -253,7 +327,6 @@ public class LevelScreen2 extends BaseScreen {
 
             if (spider.isAttacking() && spider.overlaps(mainCharacter) && !gameOver && !spiderDamageCooldowns.containsKey(spider)) {
                 health--;
-                spider.resetAttackCooldown();
                 spiderDamageCooldowns.put(spider, DAMAGE_COOLDOWN);
                 mainCharacter.clearActions();
                 mainCharacter.addAction(Actions.sequence(
@@ -264,34 +337,48 @@ public class LevelScreen2 extends BaseScreen {
                     damageSound.play(controlHUD.getEffectVolume());
                 }
                 if (health <= 0) {
+                    if (!gameOverUICreated) {
+                        createGameOverUI();
+                        gameOverUICreated = true;
+                    }
                     gameOver = true;
                     mainCharacter.remove();
-                    BaseActor gameOverMessage = new BaseActor(0, 0, mainStage);
-                    gameOverMessage.loadTexture("game-over.png");
-                    gameOverMessage.centerAtPosition(mainStage.getCamera().position.x, mainStage.getCamera().position.y);
-                    gameOverMessage.setOpacity(0);
-                    gameOverMessage.addAction(Actions.fadeIn(1));
                 }
             }
 
             if (sword.isVisible() && spider.overlaps(sword)) {
-                new SmallerSmoke(spider.getX(), spider.getY(), mainStage);
-                if (!controlHUD.isMuted()) {
-                    spiderDeathSound.play(controlHUD.getEffectVolume());
-                }
-                spider.remove();
-            }
+                spider.takeDamage(1, "sword"); // 1 damage from sword
 
-            for (BaseActor arrow : BaseActor.getList(mainStage, "com.badlogic.savethebill.objects.Arrow")) {
-                if (arrow.overlaps(spider)) {
+                if (spider.isDead()) {
+                    spider.remove();
                     new SmallerSmoke(spider.getX(), spider.getY(), mainStage);
                     if (!controlHUD.isMuted()) {
                         spiderDeathSound.play(controlHUD.getEffectVolume());
                     }
-                    spider.remove();
-                    arrow.remove();
                 }
             }
+        }
+
+        for (BaseActor arrow : BaseActor.getList(mainStage, "com.badlogic.savethebill.objects.Arrow")) {
+            for (BaseActor spiderActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.characters.Spider")) {
+                if (arrow.overlaps(spiderActor)) {
+                    Spider spider = (Spider) spiderActor;
+                    spider.takeDamage(1, "arrow");
+
+                    if (spider.isDead()) {
+                        spider.remove();
+                        arrow.remove();
+                        new SmallerSmoke(spider.getX(), spider.getY(), mainStage);
+                        if (!controlHUD.isMuted()) {
+                            spiderDeathSound.play(controlHUD.getEffectVolume());
+                        }
+                    } else {
+                        arrow.remove();
+                    }
+                    break;
+                }
+            }
+
         }
 
         controlHUD.updateMuteState(instrumental.getVolume(), windSurf.getVolume());
@@ -329,6 +416,8 @@ public class LevelScreen2 extends BaseScreen {
                     getDestroyedObjects(), win, mainCharacter.getX(), mainCharacter.getY());
                 BaseGame.setActiveScreen(new LevelScreen3(health, coins, arrows));
             }
+        } else if (gameOver) {
+            updateLoadGameButtonStyle();
         }
 
         mainCharacter.alignCamera();
@@ -509,7 +598,6 @@ public class LevelScreen2 extends BaseScreen {
     }
 
     public boolean isTreasureOpened() {
-        // LevelScreen2 doesn't have treasures, but we track if level is completed
         return win;
     }
 }
