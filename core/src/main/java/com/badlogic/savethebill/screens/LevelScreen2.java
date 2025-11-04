@@ -26,6 +26,7 @@ import com.badlogic.savethebill.objects.ChristmasTree;
 import com.badlogic.savethebill.objects.Sword;
 import com.badlogic.savethebill.visualelements.ControlHUD;
 import com.badlogic.savethebill.visualelements.InventoryHUD;
+import com.badlogic.savethebill.visualelements.InventoryPanel;
 import com.badlogic.savethebill.visualelements.SmallerSmoke;
 
 import java.util.HashMap;
@@ -56,6 +57,7 @@ public class LevelScreen2 extends BaseScreen {
     private static final int CELL_SIZE = 48;
     private boolean[][] maze;
     private InventoryHUD inventoryHUD;
+    private InventoryPanel inventoryPanel;
     private ControlHUD controlHUD;
     private HashMap<Spider, Float> spiderDamageCooldowns;
     private static final float DAMAGE_COOLDOWN = 1.0f;
@@ -150,6 +152,7 @@ public class LevelScreen2 extends BaseScreen {
         gameOver = false;
 
         inventoryHUD = new InventoryHUD(uiStage, health, coins, arrows);
+        inventoryPanel = new InventoryPanel(uiStage);
         controlHUD = new ControlHUD(uiStage, LevelScreen2.class, this);
 
         instrumental = Gdx.audio.newMusic(Gdx.files.internal("Birds_Wind_Synth.ogg"));
@@ -287,6 +290,16 @@ public class LevelScreen2 extends BaseScreen {
 
     public void update(float dt) {
         inventoryHUD.update(health, coins, arrows);
+
+        // Update inventory panel for Q key toggle
+        if (inventoryPanel != null) {
+            inventoryPanel.update();
+        }
+
+        // Don't update game logic if inventory is open (game frozen)
+        if (inventoryPanel != null && inventoryPanel.isGameFrozen()) {
+            return;
+        }
 
         if (!win && !gameOver && !sword.isVisible()) {
             if (Gdx.input.isButtonJustPressed(Buttons.LEFT)) {

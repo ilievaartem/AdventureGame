@@ -32,6 +32,7 @@ import com.badlogic.savethebill.objects.Sword;
 import com.badlogic.savethebill.visualelements.ControlHUD;
 import com.badlogic.savethebill.visualelements.DialogBox;
 import com.badlogic.savethebill.visualelements.InventoryHUD;
+import com.badlogic.savethebill.visualelements.InventoryPanel;
 import com.badlogic.savethebill.visualelements.TilemapActor;
 import com.badlogic.savethebill.visualelements.Whirlpool;
 import com.badlogic.savethebill.SaveManager;
@@ -56,6 +57,7 @@ public class LevelScreen3 extends BaseScreen {
     private Music windSurf;
     private float timeSinceVictory = 0;
     private InventoryHUD inventoryHUD;
+    private InventoryPanel inventoryPanel;
     private ControlHUD controlHUD;
     private static final float DROP_VOLUME = 0.1f;
     private static final float ORC_DAMAGE_COOLDOWN = 1.0f;
@@ -109,6 +111,7 @@ public class LevelScreen3 extends BaseScreen {
         TilemapActor tma = new TilemapActor("map.tmx", mainStage);
 
         inventoryHUD = new InventoryHUD(uiStage, health, coins, arrows);
+        inventoryPanel = new InventoryPanel(uiStage);
         controlHUD = new ControlHUD(uiStage, LevelScreen3.class, this, true);
 
         for (MapObject obj : tma.getTileList("Zoro")) {
@@ -259,6 +262,17 @@ public class LevelScreen3 extends BaseScreen {
 
     public void update(float dt) {
         inventoryHUD.update(health, coins, arrows);
+
+        // Update inventory panel for Q key toggle
+        if (inventoryPanel != null) {
+            inventoryPanel.update();
+        }
+
+        // Don't update game logic if inventory is open (game frozen)
+        if (inventoryPanel != null && inventoryPanel.isGameFrozen()) {
+            return;
+        }
+
         orcDamageTimer += dt;
 
         if (!win && !gameOver && !sword.isVisible()) {

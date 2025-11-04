@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="24" height="12" tilewidth="48" tileheight="48" infinite="0" nextlayerid="2" nextobjectid="1">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="24" height="12" tilewidth="48" tileheight="48" infinite="0" nextlayerid="3" nextobjectid="3">
  <tileset firstgid="1" name="house" tilewidth="48" tileheight="48" tilecount="296" columns="8">
   <image source="house.png" width="384" height="1776"/>
  </tileset>
@@ -19,4 +19,16 @@
 242,233,202,233,233,233,233,233,233,233,233,233,233,233,233,233,233,227,217,217,226,233,233,243
 </data>
  </layer>
+ <objectgroup id="2" name="Прошарок об'єктів 1">
+  <object id="1" x="912" y="528">
+   <properties>
+    <property name="name" value="Start"/>
+   </properties>
+  </object>
+  <object id="2" x="864" y="528" width="96" height="54">
+   <properties>
+    <property name="name" value="Outside"/>
+   </properties>
+  </object>
+ </objectgroup>
 </map>

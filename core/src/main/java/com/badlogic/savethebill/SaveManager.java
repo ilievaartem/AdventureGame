@@ -22,6 +22,7 @@ public class SaveManager {
     private static final String TREASURE_OPENED_KEY = "treasureOpened";
     private static final String HERO_X_KEY = "heroX";
     private static final String HERO_Y_KEY = "heroY";
+    private static final String INVENTORY_DATA_KEY = "inventoryData";
 
     private SaveManager() {
         savePrefs = Gdx.app.getPreferences(SAVE_FILE);
@@ -65,8 +66,24 @@ public class SaveManager {
         savePrefs.putBoolean(TREASURE_OPENED_KEY, treasureOpened);
         savePrefs.putFloat(HERO_X_KEY, heroX);
         savePrefs.putFloat(HERO_Y_KEY, heroY);
+
+        // Save inventory data
+        com.badlogic.savethebill.inventory.InventoryManager inventoryManager =
+            com.badlogic.savethebill.inventory.InventoryManager.getInstance();
+        savePrefs.putString(INVENTORY_DATA_KEY, inventoryManager.getInventoryDataString());
+
         savePrefs.putLong(SAVE_TIMESTAMP_KEY, System.currentTimeMillis());
         savePrefs.flush();
+    }
+
+    // Inventory save/load methods
+    public void saveInventoryData(String inventoryData) {
+        savePrefs.putString(INVENTORY_DATA_KEY, inventoryData);
+        savePrefs.flush();
+    }
+
+    public String loadInventoryData() {
+        return savePrefs.getString(INVENTORY_DATA_KEY, "");
     }
 
     public GameSaveData loadGame() {

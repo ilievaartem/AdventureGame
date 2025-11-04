@@ -30,6 +30,7 @@ import com.badlogic.savethebill.objects.Sword;
 import com.badlogic.savethebill.objects.Treasure;
 import com.badlogic.savethebill.visualelements.ControlHUD;
 import com.badlogic.savethebill.visualelements.DialogBox;
+import com.badlogic.savethebill.visualelements.InventoryPanel;
 import com.badlogic.savethebill.visualelements.InventoryHUD;
 import com.badlogic.savethebill.visualelements.ShopArrow;
 import com.badlogic.savethebill.visualelements.ShopHeart;
@@ -55,11 +56,15 @@ public class LevelScreen extends BaseScreen {
     Treasure treasure;
     ShopHeart shopHeart;
     ShopArrow shopArrow;
+    BaseActor shopEntrance;
+    boolean isNearShop = false;
 
     private boolean isFullscreen = true;
     private boolean treasureOpened = false;
+    private InventoryPanel inventoryPanel;
     private InventoryHUD inventoryHUD;
     private ControlHUD controlHUD;
+    // private CombatSystem combatSystem; // Add combat system
     // private MiniMap miniMap;
     private Sound flyerDeath;
     private Sound coinPickup;
@@ -78,6 +83,9 @@ public class LevelScreen extends BaseScreen {
     private boolean loadFromSave = false;
     private float savedHeroX = -1;
     private float savedHeroY = -1;
+
+    // Enhanced RPG Inventory System
+    private com.badlogic.savethebill.inventory.InventoryManager inventoryManager;
 
     public LevelScreen() {
         this.health = 3;
@@ -163,6 +171,10 @@ public class LevelScreen extends BaseScreen {
 
         gameOver = false;
 
+        // Initialize the enhanced RPG inventory system
+        inventoryManager = com.badlogic.savethebill.inventory.InventoryManager.getInstance();
+        inventoryManager.initializeForScreen(uiStage);
+
         inventoryHUD = new InventoryHUD(uiStage, health, coins, arrows);
         controlHUD = new ControlHUD(uiStage, LevelScreen.class, this);
 
@@ -214,6 +226,15 @@ public class LevelScreen extends BaseScreen {
         MapObject shopArrowTile = tma.getTileList("ShopArrow").get(0);
         MapProperties shopArrowProps = shopArrowTile.getProperties();
         shopArrow = new ShopArrow((float) shopArrowProps.get("x"), (float) shopArrowProps.get("y"), mainStage);
+
+        if (!tma.getRectangleList("Shop").isEmpty()) {
+            MapObject shopObject = tma.getRectangleList("Shop").get(0);
+            MapProperties shopProps = shopObject.getProperties();
+            shopEntrance = new BaseActor((float) shopProps.get("x"), (float) shopProps.get("y"), mainStage);
+            shopEntrance.setSize((float) shopProps.get("width"), (float) shopProps.get("height"));
+            shopEntrance.setBoundaryRectangle();
+            shopEntrance.setVisible(false);
+        }
 
         hero.toFront();
 
@@ -291,6 +312,16 @@ public class LevelScreen extends BaseScreen {
     public void update(float dt) {
         inventoryHUD.update(health, coins, arrows);
 
+        // Update the enhanced RPG inventory system
+        if (inventoryManager != null) {
+            inventoryManager.update();
+        }
+
+        // Don't update game logic if inventory is open (game frozen)
+        if (inventoryManager != null && inventoryManager.isGameFrozen()) {
+            return;
+        }
+
         if (!gameOver) {
             if (!sword.isVisible()) {
                 if (Gdx.input.isKeyPressed(Keys.W))
@@ -309,11 +340,17 @@ public class LevelScreen extends BaseScreen {
                 }
 
                 if (Gdx.input.isButtonJustPressed(Buttons.LEFT)) {
-                    swingSword();
+                    // Only swing sword if weapon is equipped in RPG inventory
+                    if (inventoryManager.canAttackWithWeapon()) {
+                        swingSword();
+                    }
                 }
 
                 if (Gdx.input.isButtonJustPressed(Buttons.RIGHT)) {
-                    shootArrow();
+                    // Only shoot arrow if ranged weapon is equipped and have arrows
+                    if (inventoryManager.canAttackWithRanged() && arrows > 0) {
+                        shootArrow();
+                    }
                 }
             }
 
@@ -340,7 +377,9 @@ public class LevelScreen extends BaseScreen {
                 for (BaseActor flyer : BaseActor.getList(mainStage, "com.badlogic.savethebill.characters.Flyer")) {
                     if (sword.overlaps(flyer)) {
                         Flyer flyerEnemy = (Flyer) flyer;
-                        flyerEnemy.takeDamage(1, "sword");
+                        // Use RPG system damage calculation
+                        int damage = inventoryManager.getCurrentWeaponDamage();
+                        flyerEnemy.takeDamage(damage, "sword");
 
                         if (flyerEnemy.isDead()) {
                             String flyerId = "flyer_" + (int)flyer.getX() + "_" + (int)flyer.getY();
@@ -379,7 +418,12 @@ public class LevelScreen extends BaseScreen {
                     Vector2 hitVector = heroPosition.sub(flyerPosition);
                     hero.setMotionAngle(hitVector.angle());
                     hero.setSpeed(100);
-                    health--;
+
+                    // Apply armor reduction from RPG system
+                    int damageReduction = inventoryManager.getCurrentArmor();
+                    int actualDamage = Math.max(1, 2 - damageReduction); // Base damage 2, reduced by armor
+                    health -= actualDamage;
+
                     hero.clearActions();
                     hero.addAction(Actions.sequence(
                         Actions.color(Color.RED, 0.2f),
@@ -393,7 +437,24 @@ public class LevelScreen extends BaseScreen {
 
             boolean nearShopHeart = hero.isWithinDistance(4, shopHeart);
             boolean nearShopArrow = hero.isWithinDistance(4, shopArrow);
-            if ((nearShopHeart || nearShopArrow) && !isNearShopItem && !isShowingExitDialog) {
+
+            boolean nearShopEntrance = shopEntrance != null && hero.isWithinDistance(4, shopEntrance);
+            if (nearShopEntrance && !isNearShop && !isNearShopItem && !isShowingExitDialog) {
+                dialogBox.setBackgroundColor(Color.TAN);
+                dialogBox.setText("Press E to enter the shop");
+                dialogBox.setVisible(true);
+                keyEIcon.setVisible(true);
+                isNearShop = true;
+            } else if (!nearShopEntrance && isNearShop) {
+                if (!isNearShopItem && !isShowingExitDialog) {
+                    dialogBox.setText(" ");
+                    dialogBox.setVisible(false);
+                    keyEIcon.setVisible(false);
+                }
+                isNearShop = false;
+            }
+
+            if ((nearShopHeart || nearShopArrow) && !isNearShopItem && !isShowingExitDialog && !isNearShop) {
                 dialogBox.setBackgroundColor(Color.TAN);
                 dialogBox.setText("To buy item, press E");
                 dialogBox.setVisible(true);
@@ -452,6 +513,11 @@ public class LevelScreen extends BaseScreen {
                 health += 1;
                 coins += 5;
                 arrows += 3;
+
+                // Add random loot to RPG inventory
+                inventoryManager.addItemByType("sword", 1); // Better sword
+                inventoryManager.addItemByType("health_potion", 0); // Health potion
+
                 treasureOpened = true;
                 if (!controlHUD.isMuted()) {
                     coinPickup.play(controlHUD.getEffectVolume());
@@ -492,6 +558,8 @@ public class LevelScreen extends BaseScreen {
 
             if (treasureOpened && hero.getY() <= 0) {
                 controlHUD.dispose();
+                // Save inventory data when transitioning between levels
+                inventoryManager.saveInventoryToGame();
                 SaveManager.getInstance().saveGameWithFullState(2, health, coins, arrows,
                     getDestroyedObjects(), treasureOpened, hero.getX(), hero.getY());
                 BaseGame.setActiveScreen(new LevelScreen2(health, coins, arrows));
@@ -514,7 +582,9 @@ public class LevelScreen extends BaseScreen {
                 for (BaseActor flyer : BaseActor.getList(mainStage, "com.badlogic.savethebill.characters.Flyer")) {
                     if (arrow.overlaps(flyer)) {
                         Flyer flyerEnemy = (Flyer) flyer;
-                        flyerEnemy.takeDamage(1, "arrow");
+                        // Use RPG system ranged damage
+                        int damage = inventoryManager.getCurrentRangedDamage();
+                        flyerEnemy.takeDamage(damage, "arrow");
 
                         if (flyerEnemy.isDead()) {
                             flyer.remove();
@@ -587,11 +657,20 @@ public class LevelScreen extends BaseScreen {
 
         updateLoadGameButtonStyle();
 
+        uiTable.clear();
+        uiTable.pad(20);
+
+        uiTable.add(messageLabel).colspan(4).expandX().expandY().top();
         uiTable.row();
-        uiTable.add().expandX().fillX();
-        uiTable.add(loadGameButton).pad(10);
-        uiTable.add(mainMenuButton).pad(10);
-        uiTable.add().expandX().fillX();
+
+        uiTable.add().expandX().expandY();
+        uiTable.row();
+        uiTable.add().expandX();
+        uiTable.add(loadGameButton).pad(20).center();
+        uiTable.add(mainMenuButton).pad(20).center();
+        uiTable.add().expandX();
+        uiTable.row();
+        uiTable.add().expandX().expandY();
     }
 
     private void updateLoadGameButtonStyle() {
@@ -667,8 +746,10 @@ public class LevelScreen extends BaseScreen {
             return true;
         }
 
-        if (gameOver)
+        if (gameOver) {
+            // Allow ESC to work even when game is over for pause functionality
             return false;
+        }
 
         if (keycode == Keys.F) {
             if (isFullscreen) {
@@ -682,6 +763,12 @@ public class LevelScreen extends BaseScreen {
         }
 
         if (keycode == Keys.E) {
+            if (shopEntrance != null && hero.isWithinDistance(4, shopEntrance)) {
+                controlHUD.dispose();
+                BaseGame.setActiveScreen(new ShopScreen(health, coins, arrows, this));
+                return true;
+            }
+
             boolean purchased = false;
             if (hero.overlaps(shopHeart) && coins >= 3) {
                 coins -= 3;
