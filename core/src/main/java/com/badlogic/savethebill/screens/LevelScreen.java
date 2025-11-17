@@ -18,6 +18,7 @@ import com.badlogic.savethebill.BaseGame;
 import com.badlogic.savethebill.BillGame;
 import com.badlogic.savethebill.GameSettings;
 import com.badlogic.savethebill.SaveManager;
+import com.badlogic.savethebill.InventoryManager;
 import com.badlogic.savethebill.characters.Flyer;
 import com.badlogic.savethebill.characters.Hero;
 import com.badlogic.savethebill.characters.NPC;
@@ -28,6 +29,7 @@ import com.badlogic.savethebill.objects.SmallRock;
 import com.badlogic.savethebill.objects.Solid;
 import com.badlogic.savethebill.objects.Sword;
 import com.badlogic.savethebill.objects.Treasure;
+import com.badlogic.savethebill.objects.WeaponUtility;
 import com.badlogic.savethebill.visualelements.ControlHUD;
 import com.badlogic.savethebill.visualelements.DialogBox;
 import com.badlogic.savethebill.visualelements.InventoryPanel;
@@ -64,7 +66,7 @@ public class LevelScreen extends BaseScreen {
     private InventoryPanel inventoryPanel;
     private InventoryHUD inventoryHUD;
     private ControlHUD controlHUD;
-    // private CombatSystem combatSystem; // Add combat system
+    // private CombatSystem combatSystem;
     // private MiniMap miniMap;
     private Sound flyerDeath;
     private Sound coinPickup;
@@ -84,8 +86,7 @@ public class LevelScreen extends BaseScreen {
     private float savedHeroX = -1;
     private float savedHeroY = -1;
 
-    // Enhanced RPG Inventory System
-    private com.badlogic.savethebill.inventory.InventoryManager inventoryManager;
+    private InventoryManager inventoryManager;
 
     public LevelScreen() {
         this.health = 3;
@@ -147,8 +148,11 @@ public class LevelScreen extends BaseScreen {
         MapProperties startProps = startPoint.getProperties();
         hero = new Hero((float) startProps.get("x"), (float) startProps.get("y"), mainStage);
 
+        inventoryManager = new InventoryManager(uiStage);
+
         sword = new Sword(0, 0, mainStage);
         sword.setVisible(false);
+        sword.setInventoryManager(inventoryManager);
 
         for (MapObject obj : tma.getTileList("Bush")) {
             MapProperties props = obj.getProperties();
@@ -171,12 +175,24 @@ public class LevelScreen extends BaseScreen {
 
         gameOver = false;
 
-        // Initialize the enhanced RPG inventory system
-        inventoryManager = com.badlogic.savethebill.inventory.InventoryManager.getInstance();
-        inventoryManager.initializeForScreen(uiStage);
+
+        inventoryManager.setFoodConsumeListener(new InventoryManager.FoodConsumeListener() {
+            @Override
+            public void onFoodConsumed(int healAmount) {
+                health += healAmount;
+                if (health > 10) {
+                    health = 10;
+                }
+                System.out.println("Player healed for " + healAmount + " health. Current health: " + health);
+            }
+        });
 
         inventoryHUD = new InventoryHUD(uiStage, health, coins, arrows);
         controlHUD = new ControlHUD(uiStage, LevelScreen.class, this);
+
+        if (inventoryManager != null && inventoryManager.getInventorySystem() != null) {
+            inventoryManager.getInventorySystem().setControlHUD(controlHUD);
+        }
 
         // Minimap is commented out - not displayed but class is kept
         // miniMap = new MiniMap(uiStage, mainStage, hero);
@@ -312,12 +328,10 @@ public class LevelScreen extends BaseScreen {
     public void update(float dt) {
         inventoryHUD.update(health, coins, arrows);
 
-        // Update the enhanced RPG inventory system
         if (inventoryManager != null) {
             inventoryManager.update();
         }
 
-        // Don't update game logic if inventory is open (game frozen)
         if (inventoryManager != null && inventoryManager.isGameFrozen()) {
             return;
         }
@@ -341,7 +355,7 @@ public class LevelScreen extends BaseScreen {
 
                 if (Gdx.input.isButtonJustPressed(Buttons.LEFT)) {
                     // Only swing sword if weapon is equipped in RPG inventory
-                    if (inventoryManager.canAttackWithWeapon()) {
+                    if (inventoryManager.canAttackWithMelee()) {
                         swingSword();
                     }
                 }
@@ -558,10 +572,9 @@ public class LevelScreen extends BaseScreen {
 
             if (treasureOpened && hero.getY() <= 0) {
                 controlHUD.dispose();
-                // Save inventory data when transitioning between levels
-                inventoryManager.saveInventoryToGame();
-                SaveManager.getInstance().saveGameWithFullState(2, health, coins, arrows,
-                    getDestroyedObjects(), treasureOpened, hero.getX(), hero.getY());
+                String inventoryData = inventoryManager.saveInventoryToGame();
+                SaveManager.getInstance().saveCompleteGameState(2, health, coins, arrows,
+                    hero.getX(), hero.getY(), getDestroyedObjects(), treasureOpened, inventoryData);
                 BaseGame.setActiveScreen(new LevelScreen2(health, coins, arrows));
             }
 
@@ -691,6 +704,9 @@ public class LevelScreen extends BaseScreen {
 
         hero.setSpeed(0);
 
+        sword.setInventoryManager(inventoryManager);
+
+
         float facingAngle = hero.getFacingAngle();
 
         Vector2 offset = new Vector2();
@@ -706,12 +722,21 @@ public class LevelScreen extends BaseScreen {
         sword.setPosition(hero.getX(), hero.getY());
         sword.moveBy(offset.x * hero.getWidth(), offset.y * hero.getHeight());
 
-        float swordArc = 90;
-        sword.setRotation(facingAngle - swordArc / 2);
+        WeaponUtility.WeaponSwingData swingData = WeaponUtility.getWeaponSwingData(inventoryManager);
+        float weaponArc = swingData.weaponArc;
+        float swingDuration = swingData.swingDuration;
+
+        if (inventoryManager != null && inventoryManager.hasAxeEquipped()) {
+            java.util.List<String> destroyedIds = WeaponUtility.handleObjectDestruction(
+                inventoryManager, mainStage, hero.getX(), hero.getY(), 80f);
+            destroyedObjects.addAll(destroyedIds);
+        }
+
+        sword.setRotation(facingAngle - weaponArc / 2);
         sword.setOriginX(0);
 
         sword.setVisible(true);
-        sword.addAction(Actions.rotateBy(swordArc, 0.25f));
+        sword.addAction(Actions.rotateBy(weaponArc, swingDuration));
         sword.addAction(Actions.after(Actions.visible(false)));
 
         if (facingAngle == 90 || facingAngle == 180)

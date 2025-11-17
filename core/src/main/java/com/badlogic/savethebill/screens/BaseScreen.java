@@ -11,7 +11,7 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent.Type;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.utils.viewport.FitViewport;
-import com.badlogic.savethebill.inventory.InventoryManager;
+import com.badlogic.savethebill.InventoryManager;
 
 public abstract class BaseScreen implements Screen, InputProcessor {
     protected Stage mainStage;
@@ -35,9 +35,7 @@ public abstract class BaseScreen implements Screen, InputProcessor {
         uiTable.setFillParent(true);
         uiStage.addActor(uiTable);
 
-        // Initialize RPG inventory system for this screen
-        inventoryManager = InventoryManager.getInstance();
-        inventoryManager.initializeForScreen(uiStage);
+        inventoryManager = new InventoryManager(uiStage);
 
         initialize();
     }
@@ -47,18 +45,16 @@ public abstract class BaseScreen implements Screen, InputProcessor {
     public abstract void update(float dt);
 
     public void render(float dt) {
-        // Update inventory system first
-        inventoryManager.update();
+        if (inventoryManager != null) {
+            inventoryManager.update();
+        }
 
-        // Only update game logic if inventory is not open (game not frozen)
         if (!inventoryManager.isGameFrozen()) {
             uiStage.act(dt);
             mainStage.act(dt);
             update(dt);
         } else {
-            // Still update UI stage for inventory interaction
             uiStage.act(dt);
-            // Don't call update(dt) when frozen to prevent game logic updates
         }
 
         Gdx.gl.glClearColor(0, 0, 0, 1);

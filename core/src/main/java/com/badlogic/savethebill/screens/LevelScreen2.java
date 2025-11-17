@@ -18,12 +18,14 @@ import com.badlogic.savethebill.BaseActor;
 import com.badlogic.savethebill.BaseGame;
 import com.badlogic.savethebill.BillGame;
 import com.badlogic.savethebill.GameSettings;
+import com.badlogic.savethebill.InventoryManager;
 import com.badlogic.savethebill.SaveManager;
 import com.badlogic.savethebill.characters.IcyHeroMovement;
 import com.badlogic.savethebill.characters.Spider;
 import com.badlogic.savethebill.objects.Arrow;
 import com.badlogic.savethebill.objects.ChristmasTree;
 import com.badlogic.savethebill.objects.Sword;
+import com.badlogic.savethebill.objects.WeaponUtility;
 import com.badlogic.savethebill.visualelements.ControlHUD;
 import com.badlogic.savethebill.visualelements.InventoryHUD;
 import com.badlogic.savethebill.visualelements.InventoryPanel;
@@ -73,6 +75,8 @@ public class LevelScreen2 extends BaseScreen {
     private float savedHeroY = -1;
     private boolean treasureOpened = false;
 
+    private InventoryManager inventoryManager;
+
     public LevelScreen2() {
         this(3, 5, 3);
     }
@@ -119,7 +123,8 @@ public class LevelScreen2 extends BaseScreen {
         for (int x = 0; x < MAZE_WIDTH; x++) {
             for (int y = 0; y < MAZE_HEIGHT; y++) {
                 if (!maze[x][y]) {
-                    new ChristmasTree(x * CELL_SIZE, y * CELL_SIZE, mainStage);
+                    ChristmasTree tree = new ChristmasTree(x * CELL_SIZE, y * CELL_SIZE, mainStage);
+                    tree.setInventoryManager(inventoryManager);
                 }
             }
         }
@@ -136,6 +141,19 @@ public class LevelScreen2 extends BaseScreen {
 
         sword = new Sword(0, 0, mainStage);
         sword.setVisible(false);
+
+        inventoryManager = new InventoryManager(uiStage);
+
+        inventoryManager.setFoodConsumeListener(new InventoryManager.FoodConsumeListener() {
+            @Override
+            public void onFoodConsumed(int healAmount) {
+                health += healAmount;
+                if (health > 10) {
+                    health = 10;
+                }
+                System.out.println("Player healed for " + healAmount + " health. Current health: " + health);
+            }
+        });
 
         Random random = new Random();
         int spiderCount = 10;
@@ -154,6 +172,10 @@ public class LevelScreen2 extends BaseScreen {
         inventoryHUD = new InventoryHUD(uiStage, health, coins, arrows);
         inventoryPanel = new InventoryPanel(uiStage);
         controlHUD = new ControlHUD(uiStage, LevelScreen2.class, this);
+
+        if (inventoryManager != null && inventoryManager.getInventorySystem() != null) {
+            inventoryManager.getInventorySystem().setControlHUD(controlHUD);
+        }
 
         instrumental = Gdx.audio.newMusic(Gdx.files.internal("Birds_Wind_Synth.ogg"));
         windSurf = Gdx.audio.newMusic(Gdx.files.internal("Scary_Сrow_Сaw.ogg"));
@@ -291,22 +313,24 @@ public class LevelScreen2 extends BaseScreen {
     public void update(float dt) {
         inventoryHUD.update(health, coins, arrows);
 
-        // Update inventory panel for Q key toggle
-        if (inventoryPanel != null) {
-            inventoryPanel.update();
+        if (inventoryManager != null) {
+            inventoryManager.update();
         }
 
-        // Don't update game logic if inventory is open (game frozen)
-        if (inventoryPanel != null && inventoryPanel.isGameFrozen()) {
+        if (inventoryManager != null && inventoryManager.isGameFrozen()) {
             return;
         }
 
         if (!win && !gameOver && !sword.isVisible()) {
             if (Gdx.input.isButtonJustPressed(Buttons.LEFT)) {
-                swingSword();
+                if (inventoryManager.canAttackWithMelee()) {
+                    swingSword();
+                }
             }
             if (Gdx.input.isButtonJustPressed(Buttons.RIGHT)) {
-                shootArrow();
+                if (inventoryManager.canAttackWithRanged() && arrows > 0) {
+                    shootArrow();
+                }
             }
         }
 
@@ -339,7 +363,10 @@ public class LevelScreen2 extends BaseScreen {
             Spider spider = (Spider) spiderActor;
 
             if (spider.isAttacking() && spider.overlaps(mainCharacter) && !gameOver && !spiderDamageCooldowns.containsKey(spider)) {
-                health--;
+                int damageReduction = inventoryManager.getCurrentArmor();
+                int actualDamage = Math.max(1, 1 - damageReduction); // Base damage 1, reduced by armor
+                health -= actualDamage;
+
                 spiderDamageCooldowns.put(spider, DAMAGE_COOLDOWN);
                 mainCharacter.clearActions();
                 mainCharacter.addAction(Actions.sequence(
@@ -360,7 +387,8 @@ public class LevelScreen2 extends BaseScreen {
             }
 
             if (sword.isVisible() && spider.overlaps(sword)) {
-                spider.takeDamage(1, "sword"); // 1 damage from sword
+                int damage = WeaponUtility.getWeaponDamage(inventoryManager);
+                spider.takeDamage(damage, "sword");
 
                 if (spider.isDead()) {
                     spider.remove();
@@ -376,7 +404,8 @@ public class LevelScreen2 extends BaseScreen {
             for (BaseActor spiderActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.characters.Spider")) {
                 if (arrow.overlaps(spiderActor)) {
                     Spider spider = (Spider) spiderActor;
-                    spider.takeDamage(1, "arrow");
+                    int damage = WeaponUtility.getRangedDamage(inventoryManager);
+                    spider.takeDamage(damage, "arrow");
 
                     if (spider.isDead()) {
                         spider.remove();
@@ -442,6 +471,13 @@ public class LevelScreen2 extends BaseScreen {
 
         mainCharacter.setSpeed(0);
 
+        sword.setInventoryManager(inventoryManager);
+
+        if (inventoryManager != null) {
+            String weaponTexture = inventoryManager.getEquippedWeaponTexture();
+            sword.loadTexture(weaponTexture);
+        }
+
         float facingAngle = mainCharacter.getFacingAngle();
 
         Vector2 offset = new Vector2();
@@ -457,12 +493,21 @@ public class LevelScreen2 extends BaseScreen {
         sword.setPosition(mainCharacter.getX(), mainCharacter.getY());
         sword.moveBy(offset.x * mainCharacter.getWidth(), offset.y * mainCharacter.getHeight());
 
-        float swordArc = 90;
-        sword.setRotation(facingAngle - swordArc / 2);
+        WeaponUtility.WeaponSwingData swingData = WeaponUtility.getWeaponSwingData(inventoryManager);
+        float weaponArc = swingData.weaponArc;
+        float swingDuration = swingData.swingDuration;
+
+        if (inventoryManager != null && inventoryManager.hasAxeEquipped()) {
+            java.util.List<String> destroyedIds = WeaponUtility.handleObjectDestruction(
+                inventoryManager, mainStage, mainCharacter.getX(), mainCharacter.getY(), 80f);
+            destroyedObjects.addAll(destroyedIds);
+        }
+
+        sword.setRotation(facingAngle - weaponArc / 2);
         sword.setOriginX(0);
 
         sword.setVisible(true);
-        sword.addAction(Actions.rotateBy(swordArc, 0.25f));
+        sword.addAction(Actions.rotateBy(weaponArc, swingDuration));
         sword.addAction(Actions.after(Actions.visible(false)));
 
         if (facingAngle == 90 || facingAngle == 180)

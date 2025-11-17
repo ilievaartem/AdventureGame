@@ -49,34 +49,6 @@ public class SaveManager {
         savePrefs.flush();
     }
 
-    public void saveGameWithState(int currentLevel, int health, int coins, int arrows,
-                                 String destroyedObjects, boolean treasureOpened) {
-        saveGameWithFullState(currentLevel, health, coins, arrows, destroyedObjects, treasureOpened, -1, -1);
-    }
-
-    public void saveGameWithFullState(int currentLevel, int health, int coins, int arrows,
-                                     String destroyedObjects, boolean treasureOpened,
-                                     float heroX, float heroY) {
-        savePrefs.putBoolean(HAS_SAVE_KEY, true);
-        savePrefs.putInteger(CURRENT_LEVEL_KEY, currentLevel);
-        savePrefs.putInteger(PLAYER_HEALTH_KEY, health);
-        savePrefs.putInteger(PLAYER_COINS_KEY, coins);
-        savePrefs.putInteger(PLAYER_ARROWS_KEY, arrows);
-        savePrefs.putString(DESTROYED_OBJECTS_KEY, destroyedObjects);
-        savePrefs.putBoolean(TREASURE_OPENED_KEY, treasureOpened);
-        savePrefs.putFloat(HERO_X_KEY, heroX);
-        savePrefs.putFloat(HERO_Y_KEY, heroY);
-
-        // Save inventory data
-        com.badlogic.savethebill.inventory.InventoryManager inventoryManager =
-            com.badlogic.savethebill.inventory.InventoryManager.getInstance();
-        savePrefs.putString(INVENTORY_DATA_KEY, inventoryManager.getInventoryDataString());
-
-        savePrefs.putLong(SAVE_TIMESTAMP_KEY, System.currentTimeMillis());
-        savePrefs.flush();
-    }
-
-    // Inventory save/load methods
     public void saveInventoryData(String inventoryData) {
         savePrefs.putString(INVENTORY_DATA_KEY, inventoryData);
         savePrefs.flush();
@@ -93,16 +65,41 @@ public class SaveManager {
 
         GameSaveData saveData = new GameSaveData();
         saveData.currentLevel = savePrefs.getInteger(CURRENT_LEVEL_KEY, 1);
-        saveData.health = savePrefs.getInteger(PLAYER_HEALTH_KEY, 3);
+        saveData.health = savePrefs.getInteger(PLAYER_HEALTH_KEY, 5);
         saveData.coins = savePrefs.getInteger(PLAYER_COINS_KEY, 0);
-        saveData.arrows = savePrefs.getInteger(PLAYER_ARROWS_KEY, 0);
+        saveData.arrows = savePrefs.getInteger(PLAYER_ARROWS_KEY, 10);
+        saveData.timestamp = savePrefs.getLong(SAVE_TIMESTAMP_KEY, 0);
+        saveData.heroX = savePrefs.getFloat(HERO_X_KEY, 0);
+        saveData.heroY = savePrefs.getFloat(HERO_Y_KEY, 0);
         saveData.destroyedObjects = savePrefs.getString(DESTROYED_OBJECTS_KEY, "");
         saveData.treasureOpened = savePrefs.getBoolean(TREASURE_OPENED_KEY, false);
-        saveData.heroX = savePrefs.getFloat(HERO_X_KEY, -1);
-        saveData.heroY = savePrefs.getFloat(HERO_Y_KEY, -1);
-        saveData.timestamp = savePrefs.getLong(SAVE_TIMESTAMP_KEY, 0);
+        saveData.inventoryData = loadInventoryData();
 
         return saveData;
+    }
+
+    public void saveCompleteGameState(int currentLevel, int health, int coins, int arrows,
+                                     float heroX, float heroY, String destroyedObjects,
+                                     boolean treasureOpened, String inventoryData) {
+        savePrefs.putBoolean(HAS_SAVE_KEY, true);
+        savePrefs.putInteger(CURRENT_LEVEL_KEY, currentLevel);
+        savePrefs.putInteger(PLAYER_HEALTH_KEY, health);
+        savePrefs.putInteger(PLAYER_COINS_KEY, coins);
+        savePrefs.putInteger(PLAYER_ARROWS_KEY, arrows);
+        savePrefs.putFloat(HERO_X_KEY, heroX);
+        savePrefs.putFloat(HERO_Y_KEY, heroY);
+        savePrefs.putString(DESTROYED_OBJECTS_KEY, destroyedObjects);
+        savePrefs.putBoolean(TREASURE_OPENED_KEY, treasureOpened);
+        savePrefs.putString(INVENTORY_DATA_KEY, inventoryData);
+        savePrefs.putLong(SAVE_TIMESTAMP_KEY, System.currentTimeMillis());
+        savePrefs.flush();
+    }
+
+    public void saveGameWithFullState(int currentLevel, int health, int coins, int arrows,
+                                     String destroyedObjects, boolean treasureOpened,
+                                     float heroX, float heroY) {
+        saveCompleteGameState(currentLevel, health, coins, arrows, heroX, heroY,
+                            destroyedObjects, treasureOpened, "");
     }
 
     public BaseScreen createLevelScreen(GameSaveData saveData) {
@@ -138,10 +135,11 @@ public class SaveManager {
         public int health;
         public int coins;
         public int arrows;
-        public String destroyedObjects = "";
-        public boolean treasureOpened = false;
         public long timestamp;
         public float heroX;
         public float heroY;
+        public String destroyedObjects;
+        public boolean treasureOpened;
+        public String inventoryData;
     }
 }

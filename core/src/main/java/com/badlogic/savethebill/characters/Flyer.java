@@ -34,14 +34,6 @@ public class Flyer extends BaseActor
 
         int actualDamage = damage;
 
-        if (damageType.equals("arrow")) {
-            if (MathUtils.random() < 0.5f) {
-                actualDamage = damage;
-            } else {
-                actualDamage = Math.max(1, damage - 1);
-            }
-        }
-
         health -= actualDamage;
     }
 

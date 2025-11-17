@@ -1,21 +1,77 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="24" height="12" tilewidth="48" tileheight="48" infinite="0" nextlayerid="3" nextobjectid="3">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="24" height="12" tilewidth="48" tileheight="48" infinite="0" nextlayerid="3" nextobjectid="31">
  <tileset firstgid="1" name="house" tilewidth="48" tileheight="48" tilecount="296" columns="8">
   <image source="house.png" width="384" height="1776"/>
+ </tileset>
+ <tileset firstgid="297" name="object-shop" tilewidth="48" tileheight="48" tilecount="10" columns="10">
+  <image source="object-shop.png" width="480" height="48"/>
+  <tile id="0">
+   <properties>
+    <property name="name" value="Chair"/>
+   </properties>
+  </tile>
+  <tile id="1">
+   <properties>
+    <property name="name" value="ShopFood"/>
+   </properties>
+  </tile>
+  <tile id="2">
+   <properties>
+    <property name="name" value="ShopArmor"/>
+   </properties>
+  </tile>
+  <tile id="3">
+   <properties>
+    <property name="name" value="ShopShield"/>
+   </properties>
+  </tile>
+  <tile id="4">
+   <properties>
+    <property name="name" value="ShopSword"/>
+   </properties>
+  </tile>
+  <tile id="5">
+   <properties>
+    <property name="name" value="ShopBow"/>
+   </properties>
+  </tile>
+  <tile id="6">
+   <properties>
+    <property name="name" value="ShopHeart"/>
+   </properties>
+  </tile>
+  <tile id="7">
+   <properties>
+    <property name="name" value="ShopArrow"/>
+   </properties>
+  </tile>
+  <tile id="8">
+   <properties>
+    <property name="id" value="default"/>
+    <property name="name" value="ShopObjects"/>
+   </properties>
+  </tile>
+  <tile id="9">
+   <properties>
+    <property name="id" value="default"/>
+    <property name="name" value="NPC"/>
+    <property name="text" value="Hello, World!"/>
+   </properties>
+  </tile>
  </tileset>
  <layer id="1" name="Прошарок плиток 1" width="24" height="12">
   <data encoding="csv">
 226,225,225,225,225,225,225,225,225,225,225,225,225,209,225,225,225,225,225,225,225,225,225,227,
-234,37,37,37,37,37,37,37,37,37,37,37,37,210,37,37,37,37,37,37,37,37,37,235,
-234,45,45,45,45,45,45,45,45,45,45,45,45,210,45,45,45,45,45,45,45,45,45,235,
-234,217,217,217,217,217,217,217,217,217,217,217,217,210,217,217,217,217,217,217,217,217,217,235,
-234,217,217,217,217,217,217,217,217,217,217,217,217,218,217,206,207,217,217,217,217,217,217,235,
-234,217,217,217,217,217,217,217,217,217,217,217,217,193,213,214,215,213,217,217,217,217,217,235,
-234,249,250,250,250,250,250,250,251,217,249,250,251,201,221,222,223,221,217,217,217,217,217,235,
+234,37,206,37,37,37,37,37,37,37,206,206,207,210,37,37,37,37,37,37,37,37,37,235,
+234,45,214,45,45,45,45,45,45,45,214,214,215,210,211,211,45,45,45,45,212,213,213,235,
+234,217,222,217,217,217,217,217,217,217,222,222,223,210,219,219,216,216,217,217,220,221,221,235,
+234,217,217,217,217,217,217,217,217,217,217,217,217,218,217,216,216,217,217,216,217,217,217,235,
+234,217,217,217,217,217,217,217,217,217,217,217,217,193,216,217,217,217,217,217,217,217,217,235,
+234,249,250,250,250,250,250,250,251,217,249,250,251,201,217,217,217,217,217,217,217,217,217,235,
 234,244,245,245,245,245,245,245,246,217,217,217,217,217,217,217,217,217,217,217,217,217,217,235,
 234,252,253,253,253,253,253,253,254,217,217,217,217,217,217,217,217,217,217,217,217,217,217,235,
-234,260,261,261,261,261,261,261,262,217,217,217,217,217,217,217,217,217,228,229,217,217,217,235,
-234,217,217,217,217,217,217,217,217,217,217,217,217,217,217,217,217,217,236,237,217,217,217,235,
+234,230,231,261,261,261,261,261,262,217,217,217,217,217,217,217,217,217,228,229,217,217,217,235,
+234,238,239,217,217,217,217,217,217,217,217,217,217,217,217,217,217,217,236,237,217,217,217,235,
 242,233,202,233,233,233,233,233,233,233,233,233,233,233,233,233,233,227,217,217,226,233,233,243
 </data>
  </layer>
@@ -28,6 +84,43 @@
   <object id="2" x="864" y="528" width="96" height="54">
    <properties>
     <property name="name" value="Outside"/>
+   </properties>
+  </object>
+  <object id="7" gid="297" x="144" y="528" width="48" height="48"/>
+  <object id="10" gid="299" x="48" y="336" width="48" height="48"/>
+  <object id="11" gid="300" x="144" y="336" width="48" height="48"/>
+  <object id="12" gid="301" x="240" y="336" width="48" height="48"/>
+  <object id="13" gid="302" x="336" y="336" width="48" height="48"/>
+  <object id="16" gid="304" x="576" y="336" width="48" height="48"/>
+  <object id="17" gid="303" x="528" y="336" width="48" height="48"/>
+  <object id="18" gid="298" x="480" y="336" width="48" height="48"/>
+  <object id="19" gid="305" x="768" y="192" width="48" height="48">
+   <properties>
+    <property name="id" value="box"/>
+   </properties>
+  </object>
+  <object id="20" gid="305" x="864" y="192" width="48" height="48">
+   <properties>
+    <property name="id" value="barrol"/>
+   </properties>
+  </object>
+  <object id="21" gid="305" x="672" y="288" width="48" height="48">
+   <properties>
+    <property name="id" value="bucket"/>
+   </properties>
+  </object>
+  <object id="22" gid="305" x="912" y="240" width="48" height="48"/>
+  <object id="23" gid="305" x="1056" y="528" width="48" height="48"/>
+  <object id="24" gid="305" x="1056" y="480" width="48" height="48"/>
+  <object id="25" gid="305" x="1008" y="528" width="48" height="48"/>
+  <object id="26" gid="305" x="240" y="192" width="48" height="48"/>
+  <object id="27" gid="305" x="48" y="240" width="48" height="48"/>
+  <object id="28" gid="305" x="48" y="288" width="48" height="48"/>
+  <object id="29" gid="305" x="48" y="192" width="48" height="48"/>
+  <object id="30" gid="306" x="432" y="336" width="48" height="48">
+   <properties>
+    <property name="id" value="ShopKeeper"/>
+    <property name="text" value="You're welcome to my shop! How can I help ypu?"/>
    </properties>
   </object>
  </objectgroup>

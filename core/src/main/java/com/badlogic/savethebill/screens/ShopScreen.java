@@ -13,8 +13,6 @@ import com.badlogic.savethebill.objects.Solid;
 import com.badlogic.savethebill.visualelements.ControlHUD;
 import com.badlogic.savethebill.visualelements.DialogBox;
 import com.badlogic.savethebill.visualelements.InventoryHUD;
-import com.badlogic.savethebill.visualelements.ShopArrow;
-import com.badlogic.savethebill.visualelements.ShopHeart;
 import com.badlogic.savethebill.visualelements.TilemapActor;
 
 public class ShopScreen extends BaseScreen {
@@ -33,15 +31,21 @@ public class ShopScreen extends BaseScreen {
     private boolean isNearExit = false;
     private LevelScreen previousLevelScreen;
 
+    private boolean wasFullscreen = true;
+
     public ShopScreen(int health, int coins, int arrows, LevelScreen previousScreen) {
         this.health = health;
         this.coins = coins;
         this.arrows = arrows;
         this.previousLevelScreen = previousScreen;
+
+        this.wasFullscreen = Gdx.graphics.isFullscreen();
     }
 
     public void initialize() {
-        Gdx.graphics.setFullscreenMode(Gdx.graphics.getDisplayMode());
+        if (wasFullscreen) {
+            Gdx.graphics.setFullscreenMode(Gdx.graphics.getDisplayMode());
+        }
 
         TilemapActor tma = new TilemapActor("shop.tmx", mainStage);
 
@@ -117,6 +121,7 @@ public class ShopScreen extends BaseScreen {
 
         boolean nearOutsideExit = outsideExit != null && hero.isWithinDistance(4, outsideExit);
         if (nearOutsideExit && !isNearExit) {
+            dialogBox.setBackgroundColor(Color.TAN);
             dialogBox.setText("Press E to exit the shop");
             dialogBox.setVisible(true);
             keyEIcon.setVisible(true);
@@ -137,24 +142,53 @@ public class ShopScreen extends BaseScreen {
 
         if (keycode == Keys.E) {
             if (outsideExit != null && hero.isWithinDistance(4, outsideExit)) {
-                controlHUD.dispose();
-                previousLevelScreen.health = this.health;
-                previousLevelScreen.coins = this.coins;
-                previousLevelScreen.arrows = this.arrows;
-                BaseGame.setActiveScreen(previousLevelScreen);
+                // Exit shop and return to LevelScreen
+                exitShop();
                 return true;
             }
+        }
+        return false;
+    }
 
-            return true;
+    private void exitShop() {
+        controlHUD.dispose();
+
+        if (wasFullscreen) {
+            Gdx.graphics.setFullscreenMode(Gdx.graphics.getDisplayMode());
         }
 
-        return false;
+        if (previousLevelScreen != null) {
+            LevelScreen newLevelScreen = new LevelScreen(
+                previousLevelScreen.getHealth(),
+                previousLevelScreen.getCoins(),
+                previousLevelScreen.getArrows(),
+                previousLevelScreen.getDestroyedObjects(),
+                previousLevelScreen.isTreasureOpened(),
+                previousLevelScreen.getHero().getX(),
+                previousLevelScreen.getHero().getY()
+            );
+            BaseGame.setActiveScreen(newLevelScreen);
+        } else {
+            BaseGame.setActiveScreen(new LevelScreen(health, coins, arrows));
+        }
     }
 
     @Override
     public void dispose() {
         super.dispose();
         controlHUD.dispose();
+    }
+
+    public void updateSoundSettings() {
+        if (controlHUD != null) {
+            controlHUD.updateSoundSettings();
+        }
+    }
+
+    public void setMuted(boolean muted) {
+        if (controlHUD != null) {
+            controlHUD.setMuted(muted);
+        }
     }
 
     public ControlHUD getControlHUD() {
@@ -177,3 +211,4 @@ public class ShopScreen extends BaseScreen {
         return hero;
     }
 }
+

@@ -170,12 +170,6 @@ public class Orc extends BaseActor {
 
         int actualDamage = damage;
 
-        if (damageType.equals("sword")) {
-            actualDamage = 2;
-        } else if (damageType.equals("arrow")) {
-            actualDamage = MathUtils.random(1, 3);
-        }
-
         health -= actualDamage;
 
         clearActions();

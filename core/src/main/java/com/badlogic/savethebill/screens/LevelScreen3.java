@@ -158,6 +158,7 @@ public class LevelScreen3 extends BaseScreen {
 
         sword = new Sword(0, 0, mainStage);
         sword.setVisible(false);
+        sword.setInventoryManager(inventoryManager); // Connect inventory manager to sword
 
         win = false;
         gameOver = false;
@@ -389,19 +390,57 @@ public class LevelScreen3 extends BaseScreen {
             }
         }
 
-        // Updated Orc damage to player
         for (BaseActor orcActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.characters.Orc")) {
             Orc orc = (Orc) orcActor;
             if (orc.isAttacking() && orc.overlaps(mainCharacter) && orcDamageTimer <= 0) {
-                health--;
-                orcDamageTimer = ORC_DAMAGE_COOLDOWN;
-                mainCharacter.clearActions();
-                mainCharacter.addAction(Actions.sequence(
-                    Actions.color(Color.RED, 0.2f),
-                    Actions.color(Color.WHITE, 0.2f)
-                ));
-                if (!controlHUD.isMuted()) {
-                    damageSound.play(controlHUD.getEffectVolume());
+                boolean blocked = false;
+                if (inventoryManager != null && inventoryManager.canBlockAttack()) {
+                    blocked = inventoryManager.attemptBlock();
+                }
+
+                if (!blocked) {
+                    health--;
+                    orcDamageTimer = ORC_DAMAGE_COOLDOWN;
+                    mainCharacter.clearActions();
+                    mainCharacter.addAction(Actions.sequence(
+                        Actions.color(Color.RED, 0.2f),
+                        Actions.color(Color.WHITE, 0.2f)
+                    ));
+                    if (!controlHUD.isMuted()) {
+                        damageSound.play(controlHUD.getEffectVolume());
+                    }
+                }
+
+                if (health <= 0) {
+                    if (!gameOverUICreated) {
+                        createGameOverUI();
+                        gameOverUICreated = true;
+                    }
+                    gameOver = true;
+                    mainCharacter.remove();
+                }
+            }
+        }
+
+        for (BaseActor flyerActor : BaseActor.getList(mainStage, "com.badlogic.savethebill.characters.Flyer")) {
+            Flyer flyer = (Flyer) flyerActor;
+            if (flyer.overlaps(mainCharacter) && orcDamageTimer <= 0) {
+                boolean blocked = false;
+                if (inventoryManager != null && inventoryManager.canBlockAttack()) {
+                    blocked = inventoryManager.attemptBlock();
+                }
+
+                if (!blocked) {
+                    health--; // Flyer does 1 heart damage
+                    orcDamageTimer = ORC_DAMAGE_COOLDOWN; // Use same cooldown to prevent spam
+                    mainCharacter.clearActions();
+                    mainCharacter.addAction(Actions.sequence(
+                        Actions.color(Color.RED, 0.2f),
+                        Actions.color(Color.WHITE, 0.2f)
+                    ));
+                    if (!controlHUD.isMuted()) {
+                        damageSound.play(controlHUD.getEffectVolume());
+                    }
                 }
 
                 if (health <= 0) {

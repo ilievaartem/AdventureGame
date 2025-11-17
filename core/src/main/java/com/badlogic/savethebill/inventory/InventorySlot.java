@@ -1,237 +1,148 @@
 package com.badlogic.savethebill.inventory;
 
-import com.badlogic.savethebill.BaseActor;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 
-/**
- * Enhanced inventory slot that can hold an item with visual feedback
- */
 public class InventorySlot {
+    public enum SlotType {
+        GENERAL,
+        WEAPON,
+        RANGED,
+        SHIELD
+    }
+
+    private SlotType type;
     private InventoryItem item;
-    private ItemType acceptedType;
-    private BaseActor slotBackground;
-    private BaseActor itemActor;
-    private BaseActor highlightActor;
-    private Label stackLabel;
-    private boolean visible = false;
-    private boolean highlighted = false;
+    private Image slotImage;
+    private Image itemImage;
+    private float x, y;
+    private boolean visible;
+    private Stage stage;
 
-    public InventorySlot(ItemType acceptedType) {
-        this.acceptedType = acceptedType;
-    }
+    private static final float SLOT_SIZE = 48f;
 
-    public void setBounds(float x, float y, float width, float height) {
-        if (slotBackground == null) {
-            // Create background actor for the slot
-            slotBackground = new BaseActor(x, y, null);
-            slotBackground.setSize(width, height);
-            slotBackground.setUserObject(this); // Reference back to this slot
+    public InventorySlot(float x, float y, SlotType type) {
+        this.x = x;
+        this.y = y;
+        this.type = type;
+        this.visible = false;
 
-            // Create highlight overlay
-            highlightActor = new BaseActor(x, y, null);
-            highlightActor.setSize(width, height);
-            highlightActor.setVisible(false);
-        } else {
-            slotBackground.setPosition(x, y);
-            slotBackground.setSize(width, height);
-
-            if (highlightActor != null) {
-                highlightActor.setPosition(x, y);
-                highlightActor.setSize(width, height);
-            }
-        }
-
-        updateVisual();
-    }
-
-    public void setBackgroundTexture(String texture) {
-        if (slotBackground != null) {
-            slotBackground.loadTexture(texture);
+        try {
+            slotImage = new Image(new Texture("slot.png"));
+            slotImage.setSize(SLOT_SIZE, SLOT_SIZE);
+            slotImage.setPosition(x, y);
+            slotImage.setVisible(false);
+        } catch (Exception e) {
+            System.err.println("Error loading slot.png: " + e.getMessage());
+            slotImage = new Image();
+            slotImage.setSize(SLOT_SIZE, SLOT_SIZE);
+            slotImage.setPosition(x, y);
+            slotImage.setVisible(false);
         }
     }
 
-    public BaseActor getSlotActor() {
-        return slotBackground;
+    public void setStage(Stage stage) {
+        this.stage = stage;
+        if (stage != null && slotImage != null) {
+            stage.addActor(slotImage);
+        }
     }
 
     public boolean canAcceptItem(InventoryItem item) {
         if (item == null) return true;
 
-        // Check if this slot can accept the item type
-        if (acceptedType != ItemType.ANY && acceptedType != item.getType()) {
-            return false;
+        switch (type) {
+            case GENERAL:
+                return true;
+            case WEAPON:
+                return item.getType() == InventoryItem.ItemType.WEAPON;
+            case RANGED:
+                return item.getType() == InventoryItem.ItemType.RANGED;
+            case SHIELD:
+                return item.getType() == InventoryItem.ItemType.SHIELD;
+            default:
+                return false;
         }
-
-        // If slot has an item, check if they can stack
-        if (this.item != null) {
-            return this.item.canStackWith(item);
-        }
-
-        return true;
     }
 
-    public void setItem(InventoryItem item) {
-        this.item = item;
-        updateVisual();
+    public void setItem(InventoryItem newItem) {
+        if (itemImage != null && stage != null) {
+            itemImage.remove();
+            itemImage = null;
+        }
+
+        this.item = newItem;
+
+        if (newItem != null) {
+            try {
+                itemImage = new Image(newItem.getTexture());
+                itemImage.setSize(SLOT_SIZE - 4, SLOT_SIZE - 4);
+                itemImage.setPosition(x + 2, y + 2);
+                itemImage.setVisible(visible);
+
+                if (stage != null) {
+                    stage.addActor(itemImage);
+                }
+            } catch (Exception e) {
+                System.err.println("Error creating item image: " + e.getMessage());
+            }
+        }
     }
 
     public InventoryItem getItem() {
         return item;
     }
 
+    public Image getImage() {
+        return slotImage;
+    }
+
     public void setVisible(boolean visible) {
         this.visible = visible;
-        if (slotBackground != null) {
-            slotBackground.setVisible(visible);
+        if (slotImage != null) {
+            slotImage.setVisible(visible);
         }
-        if (itemActor != null) {
-            itemActor.setVisible(visible);
-        }
-        if (highlightActor != null && highlighted) {
-            highlightActor.setVisible(visible);
-        }
-        if (stackLabel != null) {
-            stackLabel.setVisible(visible && item != null && item.isStackable() && item.getStackSize() > 1);
+        if (itemImage != null) {
+            itemImage.setVisible(visible);
         }
     }
 
-    public void setHighlighted(boolean highlighted) {
-        this.highlighted = highlighted;
-        if (highlightActor != null) {
-            highlightActor.setVisible(highlighted && visible);
-            if (highlighted) {
-                highlightActor.setColor(Color.YELLOW);
-                highlightActor.setOpacity(0.3f);
-            }
+    public void updatePosition(float newX, float newY) {
+        this.x = newX;
+        this.y = newY;
+
+        if (slotImage != null) {
+            slotImage.setPosition(x, y);
+        }
+        if (itemImage != null) {
+            itemImage.setPosition(x + 2, y + 2);
         }
     }
 
-    private void updateVisual() {
-        // Remove old item actor if exists
-        if (itemActor != null) {
-            itemActor.remove();
-            itemActor = null;
-        }
-
-        // Remove old stack label if exists
-        if (stackLabel != null) {
-            stackLabel.remove();
-            stackLabel = null;
-        }
-
-        // Create new item actor if item exists
-        if (item != null && slotBackground != null) {
-            Stage stage = slotBackground.getStage();
-            if (stage != null) {
-                itemActor = new BaseActor(0, 0, stage);
-                itemActor.loadTexture(item.getTexture());
-
-                // Size item to fit nicely in slot (slightly smaller than slot)
-                float itemSize = Math.min(slotBackground.getWidth(), slotBackground.getHeight()) * 0.8f;
-                itemActor.setSize(itemSize, itemSize);
-
-                // Center item in slot
-                float itemX = slotBackground.getX() + (slotBackground.getWidth() - itemSize) / 2f;
-                float itemY = slotBackground.getY() + (slotBackground.getHeight() - itemSize) / 2f;
-                itemActor.setPosition(itemX, itemY);
-
-                itemActor.setVisible(visible);
-
-                // Add stack size label for stackable items
-                if (item.isStackable() && item.getStackSize() > 1) {
-                    stackLabel = new Label(String.valueOf(item.getStackSize()),
-                        com.badlogic.savethebill.BaseGame.labelStyle);
-                    stackLabel.setFontScale(0.4f);
-                    stackLabel.setColor(Color.WHITE);
-                    stackLabel.setPosition(
-                        slotBackground.getX() + slotBackground.getWidth() - 12,
-                        slotBackground.getY() + 2
-                    );
-                    stackLabel.setVisible(visible);
-                    stage.addActor(stackLabel);
-                }
-            }
-        }
+    public boolean containsPoint(float pointX, float pointY) {
+        return pointX >= x && pointX <= x + SLOT_SIZE &&
+            pointY >= y && pointY <= y + SLOT_SIZE;
     }
 
-    public boolean isEmpty() {
-        return item == null;
+    public SlotType getType() {
+        return type;
     }
 
-    public void clear() {
-        setItem(null);
+    public float getX() {
+        return x;
     }
 
-    // For tooltip display
-    public String getTooltipText() {
-        return item != null ? item.getTooltipText() : "";
-    }
-
-    public ItemType getAcceptedType() {
-        return acceptedType;
-    }
-
-    // Stack management
-    public boolean addToStack(InventoryItem newItem) {
-        if (item != null && item.canStackWith(newItem)) {
-            int remaining = item.addToStack(newItem.getStackSize());
-            updateVisual();
-            return remaining == 0;
-        }
-        return false;
-    }
-
-    public InventoryItem removeFromStack(int amount) {
-        if (item != null && item.isStackable()) {
-            int removed = item.removeFromStack(amount);
-            if (item.getStackSize() <= 0) {
-                InventoryItem removedItem = item;
-                setItem(null);
-                return removedItem;
-            } else {
-                updateVisual();
-                // Create a new item with the removed amount
-                InventoryItem newItem = new InventoryItem(
-                    item.getTexture(),
-                    item.getType(),
-                    item.getName(),
-                    item.getDamage(),
-                    item.getArmor(),
-                    item.getWeight(),
-                    item.getValue(),
-                    item.isStackable(),
-                    item.getMaxStackSize()
-                );
-                newItem.setStackSize(removed);
-                return newItem;
-            }
-        }
-        return null;
-    }
-
-    // Quality of life methods
-    public boolean hasItem() {
-        return item != null;
-    }
-
-    public boolean isEquipmentSlot() {
-        return acceptedType != ItemType.ANY;
+    public float getY() {
+        return y;
     }
 
     public void dispose() {
-        if (itemActor != null) {
-            itemActor.remove();
+        if (itemImage != null) {
+            itemImage.remove();
         }
-        if (slotBackground != null) {
-            slotBackground.remove();
-        }
-        if (highlightActor != null) {
-            highlightActor.remove();
-        }
-        if (stackLabel != null) {
-            stackLabel.remove();
+        if (slotImage != null) {
+            slotImage.remove();
         }
     }
 }
