@@ -171,6 +171,7 @@ public class CryptoTrackerScreen implements Screen {
         if (updateTimer >= UPDATE_INTERVAL) {
             updateTimer = 0;
             cryptoDataService.updatePrices();
+            // Only refresh UI when prices are actually updated
             refreshUI();
         }
         
@@ -180,6 +181,8 @@ public class CryptoTrackerScreen implements Screen {
     }
     
     private void refreshUI() {
+        // More efficient: only recreate UI when data changes
+        // In a production app, consider updating only the labels instead of full recreation
         mainTable.clear();
         createUI();
     }

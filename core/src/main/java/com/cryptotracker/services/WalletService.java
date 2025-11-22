@@ -20,8 +20,8 @@ public class WalletService {
     }
     
     private void initializeSampleWallets() {
-        // Create sample wallet
-        Wallet wallet1 = new Wallet("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb", "Main Wallet");
+        // Create sample wallet with valid Ethereum address format (42 characters)
+        Wallet wallet1 = new Wallet("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0", "Main Wallet");
         wallet1.addBalance(new Wallet.WalletBalance("BTC", 0.5, 22500.0));
         wallet1.addBalance(new Wallet.WalletBalance("ETH", 5.2, 13000.0));
         wallet1.addBalance(new Wallet.WalletBalance("USDT", 10000.0, 10000.0));

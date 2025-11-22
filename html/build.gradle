@@ -25,7 +25,7 @@ task draftRun(type: JavaExec) {
         ]
     }
     args = [
-        "com.cryptotracker.html.GdxDefinition"
+        "com.cryptotracker.GdxDefinition"
     ]
 }
 
@@ -40,7 +40,7 @@ task superDev(type: JavaExec) {
         ]
     }
     args = [
-        "com.cryptotracker.html.GdxDefinition"
+        "com.cryptotracker.GdxDefinition"
     ]
 }
 

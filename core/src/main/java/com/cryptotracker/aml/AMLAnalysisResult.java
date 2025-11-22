@@ -23,6 +23,8 @@ public class AMLAnalysisResult {
     }
     
     public void calculateRiskScore() {
+        // Clear previous flags to avoid accumulation
+        flags.clear();
         riskScore = 0;
         
         // Calculate risk based on various factors

@@ -23,7 +23,8 @@ public class DesktopLauncher {
         config.useVsync(true);
         config.setForegroundFPS(60);
         config.setWindowedMode(1280, 720);
-        config.setWindowIcon("libgdx128.png", "libgdx64.png", "libgdx32.png", "libgdx16.png");
+        // Note: Add CryptoTracker-specific icons to the assets folder
+        // config.setWindowIcon("cryptotracker128.png", "cryptotracker64.png", "cryptotracker32.png", "cryptotracker16.png");
         return config;
     }
 }

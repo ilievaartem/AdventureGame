@@ -32,18 +32,24 @@ public class CryptoTrackerApp extends Game {
     }
     
     private void initializeFont() {
-        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(
-            Gdx.files.internal("OpenSans2.ttf")
-        );
-        FreeTypeFontParameter parameter = new FreeTypeFontParameter();
-        parameter.size = 18;
-        parameter.color = Color.WHITE;
-        parameter.borderWidth = 1;
-        parameter.borderColor = Color.BLACK;
-        parameter.borderStraight = true;
-        
-        font = generator.generateFont(parameter);
-        generator.dispose();
+        try {
+            FreeTypeFontGenerator generator = new FreeTypeFontGenerator(
+                Gdx.files.internal("OpenSans2.ttf")
+            );
+            FreeTypeFontParameter parameter = new FreeTypeFontParameter();
+            parameter.size = 18;
+            parameter.color = Color.WHITE;
+            parameter.borderWidth = 1;
+            parameter.borderColor = Color.BLACK;
+            parameter.borderStraight = true;
+            
+            font = generator.generateFont(parameter);
+            generator.dispose();
+        } catch (Exception e) {
+            // Fallback to default font if custom font fails to load
+            font = new BitmapFont();
+            Gdx.app.error("CryptoTrackerApp", "Failed to load custom font, using default", e);
+        }
     }
     
     @Override
