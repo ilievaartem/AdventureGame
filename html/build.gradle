@@ -1,0 +1,62 @@
+plugins {
+    id 'java-library'
+    id 'war'
+}
+
+java.sourceCompatibility = JavaVersion.VERSION_1_8
+java.targetCompatibility = JavaVersion.VERSION_1_8
+
+dependencies {
+    api project(':core')
+    
+    api "com.badlogicgames.gdx:gdx-backend-gwt:1.12.1"
+    api "com.badlogicgames.gdx:gdx:1.12.1:sources"
+    api "com.badlogicgames.gdx:gdx-backend-gwt:1.12.1:sources"
+}
+
+task draftRun(type: JavaExec) {
+    dependsOn tasks.classes
+    main = "com.badlogicgames.gdx.backends.gwt.GwtDevMode"
+    classpath {
+        [
+            sourceSets.main.java.srcDirs,
+            sourceSets.main.resources.srcDirs,
+            sourceSets.main.compileClasspath,
+        ]
+    }
+    args = [
+        "com.cryptotracker.GdxDefinition"
+    ]
+}
+
+task superDev(type: JavaExec) {
+    dependsOn tasks.classes
+    main = "com.badlogicgames.gdx.backends.gwt.SuperDevMode"
+    classpath {
+        [
+            sourceSets.main.java.srcDirs,
+            sourceSets.main.resources.srcDirs,
+            sourceSets.main.compileClasspath,
+        ]
+    }
+    args = [
+        "com.cryptotracker.GdxDefinition"
+    ]
+}
+
+sourceSets.main.java.srcDirs = ["src/main/java/"]
+sourceSets.main.resources.srcDirs = ["src/main/resources/"]
+
+webAppDirName = 'webapp'
+
+task dist(dependsOn: tasks.clean) {
+    doLast {
+        file("build/dist").mkdirs()
+        copy {
+            from "build/gwt/out"
+            into "build/dist"
+        }
+    }
+}
+
+dist.dependsOn(tasks.compileGwt)
